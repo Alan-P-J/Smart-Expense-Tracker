@@ -1,10 +1,28 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!--
+      Theme flash fix — runs synchronously BEFORE React mounts so the
+      <html class="dark"> attribute is set before paint. No flicker.
+    -->
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem('theme');
+          if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) { /* localStorage unavailable — fall through */ }
+      })();
+    </script>
+
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <title>ExpenseTrack</title>
   </head>
   <body>
     <div id="root"></div>

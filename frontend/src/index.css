@@ -1,3 +1,42 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+  }
+  .dark * {
+    scrollbar-color: #374151 transparent;
+  }
+  *::-webkit-scrollbar { width: 4px; height: 4px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 20px; }
+  .dark *::-webkit-scrollbar-thumb { background-color: #374151; }
+
+  /* Mobile safe area — used by sidebar + topbar */
+  :root {
+    --sat: env(safe-area-inset-top);
+    --sab: env(safe-area-inset-bottom);
+    --sal: env(safe-area-inset-left);
+    --sar: env(safe-area-inset-right);
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Sonner: top-right on desktop (default), bottom-center on mobile. */
+@media (max-width: 640px) {
+  [data-sonner-toaster] {
+    bottom: 1rem !important;
+    top: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+}
