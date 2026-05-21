@@ -1,0 +1,75 @@
+spring:
+  application:
+    name: expense-tracker
+
+  # ── DataSource ───────────────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://192.168.0.148:5432/Demo28
+    username: postgres
+    password: localadmin
+    driver-class-name: org.postgresql.Driver
+
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+
+  # ── JPA / Hibernate ──────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+    show-sql: true
+    open-in-view: false
+
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        '[format_sql]': true
+
+  # ── Flyway ───────────────────────────────────────────────────
+  flyway:
+    enabled: false
+
+  # ── Jackson ──────────────────────────────────────────────────
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+    default-property-inclusion: non_null
+
+# ── JWT ──────────────────────────────────────────────────────
+jwt:
+  access-secret: ${JWT_ACCESS_SECRET:local-dev-access-secret-min-32-chars-long}
+  refresh-secret: ${JWT_REFRESH_SECRET:local-dev-refresh-secret-min-32-chars-long}
+
+  access-expiry-ms: 900000
+  refresh-expiry-ms: 604800000
+
+# ── Server ───────────────────────────────────────────────────
+server:
+  port: 8089
+
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# ── Actuator ─────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: never
+
+# ── SpringDoc / Swagger UI ───────────────────────────────────
+springdoc:
+  api-docs:
+    path: /api-docs
+
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha

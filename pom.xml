@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.2.5</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+
+	<groupId>com.expensetracker</groupId>
+	<artifactId>expense-tracker</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>expense-tracker</name>
+	<description>Expense Tracker – Spring Boot 3 / Java 21 / PostgreSQL 16</description>
+
+	<properties>
+		<java.version>21</java.version>
+		<!-- Override Spring Boot 3.2.5's managed flyway-core (9.22.3) — that version
+		     predates the split-out flyway-database-postgresql artifact, so the build
+		     can't resolve the postgres module. Bumping to 10.x fixes both. -->
+		<flyway.version>10.10.0</flyway.version>
+		<!-- Extra library versions not managed by Spring Boot BOM -->
+		<jjwt.version>0.12.5</jjwt.version>
+		<springdoc.version>2.5.0</springdoc.version>
+		<itext.version>8.0.4</itext.version>
+		<mapstruct.version>1.5.5.Final</mapstruct.version>
+		<testcontainers.version>1.19.8</testcontainers.version>
+	</properties>
+
+	<dependencies>
+
+		<!-- ════════════════════════════════════════════════════
+		     SPRING BOOT STARTERS  (managed by parent BOM)
+		     ════════════════════════════════════════════════════ -->
+
+		<!-- Web: Spring MVC + embedded Tomcat -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<!-- Security: Spring Security 6 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+		<!-- Data JPA: Hibernate 6 + Spring Data -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+
+		<!-- Validation: Jakarta Bean Validation (Hibernate Validator) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
+		<!-- Actuator: /actuator/health used by Docker healthcheck -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<!-- ════════════════════════════════════════════════════
+		     DATABASE
+		     ════════════════════════════════════════════════════ -->
+
+		<!-- PostgreSQL JDBC driver (runtime only — not needed at compile time) -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- Flyway core -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
+
+		<!-- Flyway PostgreSQL support (required for Flyway 10+ with PG).
+		     NOT in Spring Boot BOM — version must be explicit.
+		     Must match flyway-core version managed by the BOM (10.x for Boot 3.2.x). -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+			<version>${flyway.version}</version>
+		</dependency>
+
+		<!-- ════════════════════════════════════════════════════
+		     JWT  (JJWT 0.12.x — new fluent builder API)
+		     NOTE: jjwt-impl and jjwt-jackson are runtime-only;
+		     only jjwt-api is needed at compile time.
+		     ════════════════════════════════════════════════════ -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>${jjwt.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>${jjwt.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>${jjwt.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- ════════════════════════════════════════════════════
+		     PDF EXPORT — iText 8
+		     ════════════════════════════════════════════════════ -->
+		<dependency>
+			<groupId>com.itextpdf</groupId>
+			<artifactId>itext-core</artifactId>
+			<version>${itext.version}</version>
+			<type>pom</type>
+		</dependency>
+
+		<!-- ════════════════════════════════════════════════════
+		     OPENAPI / SWAGGER UI — SpringDoc 2.x
+		     (SpringDoc 1.x was for Spring Boot 2; 2.x for Boot 3)
+		     ════════════════════════════════════════════════════ -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>${springdoc.version}</version>
+		</dependency>
+
+		<!-- ════════════════════════════════════════════════════
+		     DEVELOPER PRODUCTIVITY
+		     ════════════════════════════════════════════════════ -->
+
+		<!-- Lombok: @Getter @Setter @Builder etc (compile-time only) -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- Generates META-INF/spring-configuration-metadata.json from our
+		     @ConfigurationProperties classes (e.g. JwtProperties). Lets the
+		     Spring Boot VSCode/IntelliJ extension autocomplete & validate the
+		     jwt.* block in application.yml. Compile-time only. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-configuration-processor</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- MapStruct: compile-time DTO ↔ Entity mappers -->
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>${mapstruct.version}</version>
+		</dependency>
+
+		<!-- Jackson JSR-310 module: serialize LocalDate / OffsetDateTime -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+		</dependency>
+
+		<!-- DevTools: hot-reload during local dev (disabled in production jar) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- ════════════════════════════════════════════════════
+		     TEST DEPENDENCIES
+		     ════════════════════════════════════════════════════ -->
+
+		<!-- Spring Boot Test: JUnit 5 + Mockito + MockMvc -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Spring Security Test: @WithMockUser, SecurityMockMvcRequestPostProcessors -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Testcontainers JUnit 5 integration -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>${testcontainers.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Testcontainers PostgreSQL module -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>${testcontainers.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+
+			<!-- Spring Boot Maven Plugin: creates executable fat jar -->
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<!-- Exclude Lombok from the final jar — compile-time only -->
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+
+			<!-- Maven Compiler Plugin: Java 21 + annotation processors.
+			     ORDER IS CRITICAL: lombok must be listed before mapstruct
+			     so that MapStruct sees the Lombok-generated getters/setters. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>21</source>
+					<target>21</target>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
+						</path>
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>${mapstruct.version}</version>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+
+		</plugins>
+	</build>
+
+</project>
