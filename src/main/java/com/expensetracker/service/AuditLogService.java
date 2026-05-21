@@ -15,12 +15,28 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuditLogService {
 
     private static final String SERIALIZATION_FAILED_JSON = "{\"error\":\"serialization_failed\"}";
+
+    /**
+     * Application-assigned audit-log IDs.
+     *
+     * Seeded from {@link System#currentTimeMillis()} so different JVM
+     * restarts produce monotonically increasing IDs (assuming clock
+     * doesn't go backwards). incrementAndGet() gives in-JVM atomicity.
+     *
+     * KNOWN LIMITATION: single-JVM only. Multi-instance deployments
+     * (load-balanced backends) can collide because each instance seeds
+     * from its own millis. Acceptable here while we run one backend
+     * process; revisit if we ever horizontally scale.
+     */
+    private final AtomicLong idGenerator = new AtomicLong(System.currentTimeMillis());
 
     private final AuditLogRepository repo;
     private final ObjectMapper mapper;
@@ -46,6 +62,10 @@ public class AuditLogService {
                 .oldValue(toJson(oldValue, actor, entityType, entityId, "old"))
                 .newValue(toJson(newValue, actor, entityType, entityId, "new"))
                 .build();
+
+        // App-assigned ID — set after build() so the @Builder chain stays
+        // clean (no .id() call) and the assignment is impossible to forget.
+        entry.setId(idGenerator.incrementAndGet());
 
         repo.save(entry);
     }
