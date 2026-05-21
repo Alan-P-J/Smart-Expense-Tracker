@@ -54,8 +54,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       <aside
         className={
           'flex flex-col w-60 flex-shrink-0 ' +
-          'bg-white dark:bg-gray-900 ' +
-          'border-r border-gray-100 dark:border-gray-800 ' +
+          'bg-surface dark:bg-surface-dark ' +
+          'border-r border-border dark:border-border-dark ' +
           'transition-all duration-300 ease-in-out ' +
           'pt-[env(safe-area-inset-top)] ' +
           // Mobile: fixed drawer with slide animation; Desktop: in-flow.
@@ -84,7 +84,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </nav>
 
         {/* User profile (sticky bottom) */}
-        <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4">
+        <div className="sticky bottom-0 bg-surface dark:bg-surface-dark border-t border-border dark:border-border-dark p-4">
           <div className="flex items-center gap-3">
             <div
               className={
@@ -96,7 +96,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               {getInitials(user?.fullName)}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+              <p className="text-sm font-medium text-text-primary dark:text-text-dark-primary truncate">
                 {user?.fullName ?? '—'}
               </p>
               <div className="mt-0.5">{user && <RoleBadge role={user.role} />}</div>
@@ -106,7 +106,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               onClick={handleLogout}
               aria-label="Log out"
               className={
-                'p-2 rounded-lg text-gray-500 dark:text-gray-400 ' +
+                'p-2 rounded-lg text-text-muted dark:text-text-dark-muted ' +
                 'hover:text-danger transition-colors duration-200 ' +
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
               }

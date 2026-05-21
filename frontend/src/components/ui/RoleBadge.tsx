@@ -5,10 +5,12 @@ interface RoleBadgeProps {
 }
 
 const STYLES: Record<Role, string> = {
+  // ADMIN keeps the indigo-950 / indigo-400 dark-mode primitives — they sit
+  // outside the brand `primary` token scale (deeper / lighter respectively).
   ADMIN:
-    'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400',
+    'bg-primary-light dark:bg-indigo-950 text-primary dark:text-indigo-400',
   VIEWER:
-    'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+    'bg-surface-muted dark:bg-border-dark-strong text-text-muted dark:text-text-dark-muted',
 };
 
 export function RoleBadge({ role }: RoleBadgeProps) {

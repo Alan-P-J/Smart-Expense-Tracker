@@ -11,8 +11,8 @@ interface TopbarProps {
 }
 
 const ICON_BUTTON =
-  'p-2 rounded-lg text-gray-500 dark:text-gray-400 ' +
-  'hover:bg-gray-100 dark:hover:bg-gray-800 ' +
+  'p-2 rounded-lg text-text-muted dark:text-text-dark-muted ' +
+  'hover:bg-surface-muted dark:hover:bg-border-dark ' +
   'transition-colors duration-200 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
 
@@ -26,8 +26,8 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
     <header
       className={
         'sticky top-0 z-30 ' +
-        'bg-white dark:bg-gray-900 ' +
-        'border-b border-gray-100 dark:border-gray-800 ' +
+        'bg-surface dark:bg-surface-dark ' +
+        'border-b border-border dark:border-border-dark ' +
         'px-6 py-4 flex items-center gap-4 ' +
         'pt-[calc(env(safe-area-inset-top)+1rem)] ' +
         'transition-colors duration-200'
@@ -42,7 +42,7 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
         <Menu size={20} aria-hidden="true" />
       </button>
 
-      <h1 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">
+      <h1 className="text-lg md:text-xl font-semibold text-text-primary dark:text-text-dark-primary">
         {title}
       </h1>
 

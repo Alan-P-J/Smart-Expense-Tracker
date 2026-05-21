@@ -10,11 +10,11 @@ export function PageHeader({ title, subtitle, action }: PageHeaderProps) {
   return (
     <div className="flex justify-between items-start mb-6 gap-4">
       <div>
-        <h1 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">
+        <h1 className="text-lg md:text-xl font-semibold text-text-primary dark:text-text-dark-primary">
           {title}
         </h1>
         {subtitle && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>
+          <p className="text-sm text-text-muted dark:text-text-dark-muted mt-0.5">{subtitle}</p>
         )}
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}

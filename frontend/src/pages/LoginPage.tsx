@@ -60,7 +60,7 @@ export function LoginPage() {
   return (
     <div
       className={
-        'min-h-screen bg-gray-50 dark:bg-gray-950 ' +
+        'min-h-screen bg-surface-muted dark:bg-surface-dark-muted ' +
         'flex items-center justify-center px-4 py-12 ' +
         'transition-colors duration-200'
       }
@@ -68,20 +68,20 @@ export function LoginPage() {
       <div
         className={
           'w-full max-w-md ' +
-          'bg-white dark:bg-gray-900 ' +
+          'bg-surface dark:bg-surface-dark ' +
           'rounded-2xl shadow-xl ' +
-          'border border-gray-100 dark:border-gray-800 ' +
+          'border border-border dark:border-border-dark ' +
           'p-8 space-y-6 ' +
           'transition-colors duration-200'
         }
       >
         {/* Logo + heading */}
-        <div className="text-center space-y-2 pb-6 border-b border-gray-100 dark:border-gray-800">
+        <div className="text-center space-y-2 pb-6 border-b border-border dark:border-border-dark">
           <div className="inline-flex items-center justify-center mb-2">
             <Receipt size={32} className="text-primary" aria-hidden="true" />
           </div>
           <h1 className="text-2xl md:text-3xl font-semibold text-primary">ExpenseTrack</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Sign in to your account</p>
+          <p className="text-sm text-text-muted dark:text-text-dark-muted">Sign in to your account</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -108,8 +108,8 @@ export function LoginPage() {
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 className={
-                  'p-1.5 rounded-md text-gray-400 hover:text-gray-600 ' +
-                  'dark:hover:text-gray-200 transition-colors duration-200 ' +
+                  'p-1.5 rounded-md text-text-muted hover:text-text-secondary ' +
+                  'dark:hover:text-text-dark-secondary transition-colors duration-200 ' +
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
                 }
               >
@@ -123,7 +123,7 @@ export function LoginPage() {
             type="submit"
             disabled={isSubmitting}
             className={
-              'w-full bg-primary hover:bg-primary-dark text-white ' +
+              'w-full bg-primary hover:bg-primary-hover text-white ' +
               'rounded-lg py-2.5 font-medium ' +
               'transition-all duration-200 ' +
               'active:scale-[0.98] ' +
@@ -136,7 +136,7 @@ export function LoginPage() {
             <span>{isSubmitting ? 'Signing in...' : 'Sign in'}</span>
           </button>
 
-          <p className="text-xs text-center text-gray-400 dark:text-gray-600 mt-4">
+          <p className="text-xs text-center text-text-muted dark:text-text-dark-muted mt-4">
             Secure access to your expense workspace
           </p>
         </form>

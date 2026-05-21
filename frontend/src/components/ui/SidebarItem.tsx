@@ -15,12 +15,12 @@ const BASE =
 const ACTIVE =
   'bg-primary-light dark:bg-indigo-950 ' +
   'text-primary dark:text-indigo-400 ' +
-  'shadow-[inset_2px_0_0_0_#4F46E5] ' +
+  'shadow-[inset_2px_0_0_0_theme(colors.primary.DEFAULT)] ' +
   'font-medium';
 
 const INACTIVE =
-  'text-gray-600 dark:text-gray-400 ' +
-  'hover:bg-gray-50 dark:hover:bg-gray-800/50';
+  'text-text-muted dark:text-text-dark-muted ' +
+  'hover:bg-surface-muted dark:hover:bg-border-dark-strong/50';
 
 export function SidebarItem({ icon: Icon, label, to, onClick }: SidebarItemProps) {
   return (

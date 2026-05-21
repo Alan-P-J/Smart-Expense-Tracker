@@ -14,7 +14,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
       <div>
         <label
           htmlFor={id}
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          className="block text-sm font-medium text-text-secondary dark:text-text-dark-secondary mb-1"
         >
           {label}
         </label>
@@ -27,10 +27,10 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
             aria-describedby={error ? `${id}-error` : undefined}
             className={
               'w-full px-3 py-2.5 rounded-lg border ' +
-              'border-gray-200 dark:border-gray-700 ' +
-              'bg-white dark:bg-gray-800 ' +
-              'text-gray-900 dark:text-gray-100 ' +
-              'placeholder:text-gray-400 ' +
+              'border-border-strong dark:border-border-dark-strong ' +
+              'bg-surface dark:bg-surface-dark ' +
+              'text-text-primary dark:text-text-dark-primary ' +
+              'placeholder:text-text-muted ' +
               'focus:outline-none focus:ring-2 focus:ring-primary ' +
               'focus-visible:ring-2 focus-visible:ring-primary ' +
               'transition-colors duration-200 ' +

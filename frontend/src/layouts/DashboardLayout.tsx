@@ -16,7 +16,7 @@ export function DashboardLayout() {
   return (
     <div
       className={
-        'flex min-h-screen bg-gray-50 dark:bg-gray-950 ' +
+        'flex min-h-screen bg-surface-muted dark:bg-surface-dark-muted ' +
         'transition-colors duration-200'
       }
     >
