@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
-import { AlertTriangle, Plus } from 'lucide-react';
+import { AlertTriangle, Download, FileText, Plus } from 'lucide-react';
 
 import { PageHeader } from '../components/ui/PageHeader';
 import { AppCard } from '../components/ui/AppCard';
@@ -21,9 +21,20 @@ import { ExpenseForm } from '../components/expenses/ExpenseForm';
 
 import { expenseService } from '../api/services/expenseService';
 import { categoryService } from '../api/services/categoryService';
+import { exportService } from '../api/services/exportService';
 import { useAuth } from '../hooks/useAuth';
 import { useExpenseFilters } from '../hooks/useExpenseFilters';
 import type { ExpenseResponse } from '../types';
+
+const EXPORT_BTN =
+  'flex items-center gap-2 text-sm ' +
+  'border border-border-strong dark:border-border-dark-strong ' +
+  'text-text-secondary dark:text-text-dark-secondary ' +
+  'px-3 py-2 rounded-lg ' +
+  'hover:bg-surface-muted dark:hover:bg-border-dark ' +
+  'transition-colors duration-150 ' +
+  'disabled:opacity-50 disabled:cursor-not-allowed ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
 
 export function ExpensesPage() {
   const { isAdmin } = useAuth();
@@ -44,6 +55,26 @@ export function ExpensesPage() {
   const [isFormOpen,        setFormOpen]        = useState(false);
   const [editingExpense,    setEditingExpense]  = useState<ExpenseResponse | null>(null);
   const [deletingExpense,   setDeletingExpense] = useState<ExpenseResponse | null>(null);
+  const [exporting, setExporting] = useState<'csv' | 'pdf' | null>(null);
+
+  // CSV/PDF downloads — wrap exportService so we can show toast feedback
+  // on 401/403/network. Using axios+blob (rather than window.open) lets us
+  // catch HTTP errors and avoid leaving the user with a popped-up tab.
+  const handleExport = async (kind: 'csv' | 'pdf') => {
+    if (exporting) return;
+    setExporting(kind);
+    try {
+      await (kind === 'csv' ? exportService.downloadCsv() : exportService.downloadPdf());
+    } catch (err) {
+      if (err instanceof AxiosError && err.response?.status === 403) {
+        toast.error("You don't have permission to export this report");
+      } else {
+        toast.error(`Couldn't download ${kind.toUpperCase()}. Try again.`);
+      }
+    } finally {
+      setExporting(null);
+    }
+  };
 
   // Categories — rarely change after seed; cache forever.
   const { data: categories } = useQuery({
@@ -133,6 +164,34 @@ export function ExpensesPage() {
           )
         }
       />
+
+      {/* Export row — CSV is open to viewers, PDF is admin-only.
+          Sits between the header and the main card so it doesn't compete
+          for visual weight with the data table. */}
+      <div className="flex justify-end gap-2 -mt-2 mb-2">
+        <button
+          type="button"
+          onClick={() => handleExport('csv')}
+          disabled={exporting !== null}
+          className={EXPORT_BTN}
+          aria-label="Export CSV"
+        >
+          <Download size={15} aria-hidden="true" />
+          {exporting === 'csv' ? 'Preparing…' : 'Export CSV'}
+        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => handleExport('pdf')}
+            disabled={exporting !== null}
+            className={EXPORT_BTN}
+            aria-label="Export PDF"
+          >
+            <FileText size={15} aria-hidden="true" />
+            {exporting === 'pdf' ? 'Preparing…' : 'Export PDF'}
+          </button>
+        )}
+      </div>
 
       <AppCard className="space-y-4">
         <div className="flex items-center gap-3">
