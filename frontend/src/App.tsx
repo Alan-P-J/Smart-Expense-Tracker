@@ -12,6 +12,9 @@ import { CategoriesPage } from './pages/CategoriesPage';
 import { BudgetsPage } from './pages/BudgetsPage';
 import { UsersPage } from './pages/UsersPage';
 import { AuditLogPage } from './pages/AuditLogPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { SettingsPage } from './pages/SettingsPage';
+import { ReportsPage } from './pages/ReportsPage';
 
 function App() {
   return (
@@ -26,6 +29,9 @@ function App() {
           <Route path="expenses"   element={<ExpensesPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="budgets"    element={<BudgetsPage />} />
+          <Route path="reports"    element={<ReportsPage />} />
+          <Route path="profile"    element={<ProfilePage />} />
+          <Route path="settings"   element={<SettingsPage />} />
 
           <Route element={<AdminRoute />}>
             <Route path="users"     element={<UsersPage />} />

@@ -14,6 +14,7 @@ import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +39,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final CookieUtil cookieUtil;
     private final PasswordEncoder passwordEncoder;
+    private final Environment env;
 
     @Transactional
     public AuthResponse login(LoginRequest req, HttpServletResponse response) {
@@ -54,8 +57,15 @@ public class AuthService {
 
         userRepo.updateLastLoginAt(user.getId(), OffsetDateTime.now());
 
-        writeTokenCookies(user, response);
-        return AuthResponse.from(user);
+        String access = writeTokenCookies(user, response);
+        return isDevProfile()
+                ? AuthResponse.from(user, access)
+                : AuthResponse.from(user);
+    }
+
+    private boolean isDevProfile() {
+        return Arrays.stream(env.getActiveProfiles())
+                .anyMatch(p -> p.equalsIgnoreCase("dev") || p.equalsIgnoreCase("local"));
     }
 
     @Transactional
@@ -123,7 +133,7 @@ public class AuthService {
         return AuthResponse.from(user);
     }
 
-    private void writeTokenCookies(AdminUser user, HttpServletResponse response) {
+    private String writeTokenCookies(AdminUser user, HttpServletResponse response) {
         String access  = jwtUtil.generateAccessToken(user);
         String refresh = jwtUtil.generateRefreshToken(user);
 
@@ -140,5 +150,6 @@ public class AuthService {
 
         cookieUtil.setAccessCookie(response,  access,  jwtUtil.getAccessExpiryMs());
         cookieUtil.setRefreshCookie(response, refresh, jwtUtil.getRefreshExpiryMs());
+        return access;
     }
 }

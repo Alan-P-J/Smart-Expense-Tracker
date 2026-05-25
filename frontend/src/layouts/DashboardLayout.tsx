@@ -1,31 +1,31 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
-import { Sidebar } from './Sidebar';
+import { MobileDrawer, Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { useSidebarCollapsed } from '../hooks/useSidebarCollapsed';
 
 export function DashboardLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { collapsed, toggle: toggleCollapsed } = useSidebarCollapsed();
   const location = useLocation();
 
   // Auto-close mobile drawer when route changes.
   useEffect(() => {
-    setSidebarOpen(false);
+    setMobileOpen(false);
   }, [location.pathname]);
 
   return (
-    <div
-      className={
-        'flex min-h-screen bg-surface-muted dark:bg-surface-dark-muted ' +
-        'transition-colors duration-200'
-      }
-    >
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="flex min-h-screen bg-surface-muted dark:bg-[#081028] text-text-primary dark:text-[#F5F7FF] transition-colors duration-200">
+      <Sidebar collapsed={collapsed} />
+      <MobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} />
 
-      {/* min-w-0 prevents flex children from expanding past viewport */}
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar onOpenSidebar={() => setSidebarOpen(true)} />
-        <main className="flex-1 p-6 overflow-auto">
+        <Topbar
+          onOpenMobileDrawer={() => setMobileOpen(true)}
+          onToggleCollapse={toggleCollapsed}
+        />
+        <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
       </div>

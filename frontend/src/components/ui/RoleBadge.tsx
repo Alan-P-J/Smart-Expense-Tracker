@@ -10,7 +10,7 @@ const STYLES: Record<Role, string> = {
   ADMIN:
     'bg-primary-light dark:bg-indigo-950 text-primary dark:text-indigo-400',
   VIEWER:
-    'bg-surface-muted dark:bg-border-dark-strong text-text-muted dark:text-text-dark-muted',
+    'bg-surface-muted dark:bg-border-dark-strong text-text-muted dark:text-[#94A3B8]',
 };
 
 export function RoleBadge({ role }: RoleBadgeProps) {

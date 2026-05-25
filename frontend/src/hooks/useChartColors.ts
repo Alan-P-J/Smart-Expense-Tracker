@@ -28,13 +28,9 @@ export function useChartColors() {
   }, []);
 
   return {
-    // CartesianGrid stroke — slate-200 light / slate-700 dark (matches border.dark)
-    gridColor:     isDark ? '#334155' : '#E2E8F0',
-    // Axis ticks — slate-500 light / slate-400 dark (matches text.dark-muted)
-    tickColor:     isDark ? '#94A3B8' : '#64748B',
-    // Tooltip bg — surface DEFAULT light / surface.dark in dark
-    tooltipBg:     isDark ? '#1E293B' : '#FFFFFF',
-    // Tooltip border — border.DEFAULT light / border.dark in dark
-    tooltipBorder: isDark ? '#334155' : '#E2E8F0',
+    gridColor:     isDark ? '#1F2A44' : '#E2E8F0', // border.dark / border.DEFAULT
+    tickColor:     isDark ? '#94A3B8' : '#64748B', // text.dark-muted / text.muted
+    tooltipBg:     isDark ? '#1A233A' : '#FFFFFF', // surface.dark / surface.DEFAULT
+    tooltipBorder: isDark ? '#2D3956' : '#E2E8F0', // border.dark-strong / border.DEFAULT
   };
 }

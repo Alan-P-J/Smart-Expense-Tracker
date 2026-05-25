@@ -143,6 +143,23 @@ export interface RecentExpenseResponse {
   categoryColourHex: string;
 }
 
+// ─── Reports ────────────────────────────────────────────────
+export interface ReportSummaryResponse {
+  totalAmount: string;
+  totalCount: number;
+  avgPerDay: string;
+  avgPerExpense: string;
+  largestExpense: RecentExpenseResponse | null;
+  mostActiveDay: string | null;
+}
+
+export interface DayOfWeekSpendResponse {
+  day: string;        // "Mon"..."Sun"
+  dayIndex: number;   // 1=Mon ... 7=Sun
+  amount: string;
+  count: number;
+}
+
 // ─── Audit ──────────────────────────────────────────────────
 export interface AuditLogResponse {
   id: number;

@@ -1,121 +1,177 @@
 import { useEffect } from 'react';
 import {
+  BarChart3,
   ClipboardList,
   LayoutDashboard,
-  LogOut,
   PieChart,
   Receipt,
   Tag,
   Users,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import type { LucideIcon } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 
-import { SidebarItem } from '../components/ui/SidebarItem';
-import { RoleBadge } from '../components/ui/RoleBadge';
 import { useAuth } from '../hooks/useAuth';
-import { getInitials } from '../lib/initials';
+
+interface NavItem {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  adminOnly?: boolean;
+}
+
+const NAV: NavItem[] = [
+  { to: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
+  { to: '/expenses',   label: 'Expenses',   icon: Receipt },
+  { to: '/categories', label: 'Categories', icon: Tag },
+  { to: '/budgets',    label: 'Budgets',    icon: PieChart },
+  { to: '/reports',    label: 'Reports',    icon: BarChart3 },
+  { to: '/users',      label: 'Users',      icon: Users,         adminOnly: true },
+  { to: '/audit-log',  label: 'Audit Log',  icon: ClipboardList, adminOnly: true },
+];
+
+function Logo({ collapsed }: { collapsed: boolean }) {
+  return (
+    <div
+      className={
+        'h-[84px] border-b border-border dark:border-[#1F2A44] flex items-center gap-3 flex-shrink-0 ' +
+        (collapsed ? 'justify-center px-0' : 'px-6')
+      }
+    >
+      <div
+        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+        style={{
+          background: 'linear-gradient(135deg, #5B5CF0 0%, #7C5CF0 100%)',
+          boxShadow: '0 6px 18px -6px rgba(91, 92, 240, 0.65)',
+        }}
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="3" width="14" height="18" rx="2" />
+          <path d="M8 8h6M8 12h6M8 16h4" />
+          <path d="M18 3v18" />
+        </svg>
+      </div>
+      {!collapsed && (
+        <div className="text-[17px] font-bold tracking-tight text-text-primary dark:text-[#F5F7FF] whitespace-nowrap">
+          ExpenseTrack
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface SidebarBodyProps {
+  collapsed: boolean;
+  onItemClick?: () => void;
+}
+
+function SidebarBody({ collapsed, onItemClick }: SidebarBodyProps) {
+  const { isAdmin } = useAuth();
+  const items = NAV.filter((n) => !n.adminOnly || isAdmin);
+
+  return (
+    <>
+      <Logo collapsed={collapsed} />
+
+      {/* Nav — intentionally NO flex-1 so items sit naturally under the logo
+          and the rest of the sidebar stays empty, per design spec. */}
+      <nav className={'py-4 flex flex-col gap-1 overflow-y-auto ' + (collapsed ? 'px-2' : 'px-3')}>
+        {items.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            onClick={onItemClick}
+            title={collapsed ? label : undefined}
+            className={({ isActive }) =>
+              'group h-11 w-full rounded-xl flex items-center text-[14px] font-medium transition-colors duration-150 shrink-0 ' +
+              (collapsed ? 'justify-center px-0 ' : 'gap-3 px-3.5 ') +
+              (isActive
+                ? 'bg-accent text-white shadow-[0_8px_22px_-10px_rgba(91,92,240,0.7)]'
+                : 'text-text-muted dark:text-[#94A3B8] hover:bg-accent-soft hover:text-accent dark:hover:text-accent')
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Icon
+                  size={18}
+                  className={isActive ? 'text-white' : 'text-text-muted dark:text-[#94A3B8] group-hover:text-accent'}
+                  aria-hidden="true"
+                />
+                {!collapsed && <span className="whitespace-nowrap">{label}</span>}
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+    </>
+  );
+}
 
 interface SidebarProps {
+  collapsed: boolean;
+}
+
+export function Sidebar({ collapsed }: SidebarProps) {
+  // Sticky to the viewport so the nav stays pinned while the main content scrolls.
+  // Arbitrary-value dark bg sidesteps a Tailwind JIT quirk where `dark:` + a
+  // color path containing `dark` (surface-dark-sidebar) wasn't always emitted.
+  const width = collapsed ? 76 : 248;
+  return (
+    <aside
+      className={
+        'hidden lg:flex shrink-0 flex-col ' +
+        'bg-white dark:bg-[#17233D] ' +
+        'border-r border-border dark:border-[#1F2A44] ' +
+        'transition-[width] duration-300 ease-out overflow-hidden ' +
+        'sticky top-0 self-start h-screen z-30'
+      }
+      style={{ width }}
+    >
+      <SidebarBody collapsed={collapsed} />
+    </aside>
+  );
+}
+
+interface MobileDrawerProps {
   open: boolean;
   onClose: () => void;
 }
 
-export function Sidebar({ open, onClose }: SidebarProps) {
-  const { user, isAdmin, logout } = useAuth();
-  const navigate = useNavigate();
-
-  // ESC closes mobile drawer.
+export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [open, onClose]);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login', { replace: true });
-  };
-
   return (
-    <>
-      {/* Backdrop — mobile only, click closes the drawer */}
+    <div className={'lg:hidden fixed inset-0 z-50 ' + (open ? '' : 'pointer-events-none')}>
       <div
         onClick={onClose}
         aria-hidden="true"
-        className={
-          'md:hidden fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ' +
-          (open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none')
-        }
+        className={'absolute inset-0 transition-opacity duration-300 ' + (open ? 'opacity-100' : 'opacity-0')}
+        style={{ background: 'rgba(8, 16, 40, 0.55)', backdropFilter: 'blur(4px)' }}
       />
-
       <aside
         className={
-          'flex flex-col w-60 flex-shrink-0 ' +
-          'bg-surface dark:bg-surface-dark ' +
-          'border-r border-border dark:border-border-dark ' +
-          'transition-all duration-300 ease-in-out ' +
-          'pt-[env(safe-area-inset-top)] ' +
-          // Mobile: fixed drawer with slide animation; Desktop: in-flow.
-          'fixed md:static inset-y-0 left-0 z-50 ' +
-          (open ? 'translate-x-0' : '-translate-x-full md:translate-x-0')
+          'absolute left-0 top-0 bottom-0 w-[280px] max-w-[85vw] ' +
+          'bg-white dark:bg-[#17233D] ' +
+          'border-r border-border dark:border-[#2D3956] ' +
+          'flex flex-col transition-transform duration-300 ease-out shadow-pop ' +
+          (open ? 'translate-x-0' : '-translate-x-full')
         }
       >
-        {/* Logo */}
-        <div className="flex items-center gap-2 px-4 py-5 flex-shrink-0">
-          <Receipt size={22} className="text-primary" aria-hidden="true" />
-          <span className="text-primary font-semibold text-base">ExpenseTrack</span>
-        </div>
-
-        {/* Nav (scrollable if needed) */}
-        <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
-          <SidebarItem icon={LayoutDashboard} label="Dashboard"  to="/dashboard"  onClick={onClose} />
-          <SidebarItem icon={Receipt}         label="Expenses"   to="/expenses"   onClick={onClose} />
-          <SidebarItem icon={Tag}             label="Categories" to="/categories" onClick={onClose} />
-          <SidebarItem icon={PieChart}        label="Budgets"    to="/budgets"    onClick={onClose} />
-          {isAdmin && (
-            <>
-              <SidebarItem icon={Users}         label="Users"      to="/users"     onClick={onClose} />
-              <SidebarItem icon={ClipboardList} label="Audit Log"  to="/audit-log" onClick={onClose} />
-            </>
-          )}
-        </nav>
-
-        {/* User profile (sticky bottom) */}
-        <div className="sticky bottom-0 bg-surface dark:bg-surface-dark border-t border-border dark:border-border-dark p-4">
-          <div className="flex items-center gap-3">
-            <div
-              className={
-                'w-8 h-8 rounded-full bg-primary-light text-primary ' +
-                'flex items-center justify-center text-sm font-medium flex-shrink-0'
-              }
-              aria-hidden="true"
-            >
-              {getInitials(user?.fullName)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-text-primary dark:text-text-dark-primary truncate">
-                {user?.fullName ?? '—'}
-              </p>
-              <div className="mt-0.5">{user && <RoleBadge role={user.role} />}</div>
-            </div>
-            <button
-              type="button"
-              onClick={handleLogout}
-              aria-label="Log out"
-              className={
-                'p-2 rounded-lg text-text-muted dark:text-text-dark-muted ' +
-                'hover:text-danger transition-colors duration-200 ' +
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
-              }
-            >
-              <LogOut size={16} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
+        <SidebarBody collapsed={false} onItemClick={onClose} />
       </aside>
-    </>
+    </div>
   );
 }

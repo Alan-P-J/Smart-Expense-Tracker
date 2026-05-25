@@ -63,8 +63,8 @@ export function ConfirmDialog({
     >
       <div
         className={
-          'bg-surface dark:bg-surface-dark ' +
-          'rounded-2xl border border-border dark:border-border-dark ' +
+          'bg-surface dark:bg-[#1A233A] ' +
+          'rounded-2xl border border-border dark:border-[#1F2A44] ' +
           'p-6 w-full max-w-sm shadow-xl'
         }
         // Stop overlay click from bubbling through if a parent ever listens.
@@ -76,11 +76,11 @@ export function ConfirmDialog({
 
         <h2
           id={titleId}
-          className="mt-4 text-base font-semibold text-text-primary dark:text-text-dark-primary"
+          className="mt-4 text-base font-semibold text-text-primary dark:text-[#F5F7FF]"
         >
           {title}
         </h2>
-        <p className="mt-1 text-sm text-text-muted dark:text-text-dark-muted">{message}</p>
+        <p className="mt-1 text-sm text-text-muted dark:text-[#94A3B8]">{message}</p>
 
         <div className="mt-6 flex gap-3">
           <button
@@ -90,8 +90,8 @@ export function ConfirmDialog({
             onClick={onCancel}
             disabled={isLoading}
             className={
-              'flex-1 border border-border-strong dark:border-border-dark-strong ' +
-              'rounded-lg py-2.5 text-sm text-text-secondary dark:text-text-dark-secondary ' +
+              'flex-1 border border-border-strong dark:border-[#2D3956] ' +
+              'rounded-lg py-2.5 text-sm text-text-secondary dark:text-[#CBD5E1] ' +
               'hover:bg-surface-muted dark:hover:bg-border-dark ' +
               'transition-colors duration-200 ' +
               'disabled:opacity-50 disabled:cursor-not-allowed ' +

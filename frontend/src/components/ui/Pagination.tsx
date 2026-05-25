@@ -37,7 +37,7 @@ function computePages(current: number, total: number): Array<number | 'ellipsis'
 
 const NAV_BTN =
   'p-2 rounded-lg transition-colors duration-150 ' +
-  'text-text-secondary dark:text-text-dark-secondary ' +
+  'text-text-secondary dark:text-[#CBD5E1] ' +
   'hover:bg-surface-muted dark:hover:bg-border-dark ' +
   'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
@@ -68,7 +68,7 @@ export function Pagination({
 
   return (
     <div className="flex flex-wrap gap-3 justify-between items-center mt-4">
-      <p className="text-sm text-text-muted dark:text-text-dark-muted">
+      <p className="text-sm text-text-muted dark:text-[#94A3B8]">
         Showing {start}–{end} of {totalElements} expenses
       </p>
 
@@ -88,7 +88,7 @@ export function Pagination({
             <span
               key={`gap-${i}`}
               aria-hidden="true"
-              className="px-1 text-sm text-text-muted dark:text-text-dark-muted"
+              className="px-1 text-sm text-text-muted dark:text-[#94A3B8]"
             >
               …
             </span>
@@ -103,7 +103,7 @@ export function Pagination({
                 PAGE_BTN +
                 (p === safeCurrent
                   ? ' bg-primary text-white'
-                  : ' text-text-secondary dark:text-text-dark-secondary hover:bg-surface-muted dark:hover:bg-border-dark')
+                  : ' text-text-secondary dark:text-[#CBD5E1] hover:bg-surface-muted dark:hover:bg-border-dark')
               }
             >
               {p + 1}

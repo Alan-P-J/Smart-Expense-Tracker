@@ -21,15 +21,15 @@ interface ExpenseFiltersProps {
 // Shared field shell so search / select / date inputs all look identical.
 const FIELD =
   'rounded-lg border ' +
-  'border-border-strong dark:border-border-dark-strong ' +
-  'bg-surface dark:bg-surface-dark ' +
-  'text-text-primary dark:text-text-dark-primary ' +
+  'border-border-strong dark:border-[#2D3956] ' +
+  'bg-surface dark:bg-[#1A233A] ' +
+  'text-text-primary dark:text-[#F5F7FF] ' +
   'placeholder:text-text-muted ' +
   'focus:outline-none focus:ring-2 focus:ring-primary ' +
   'transition-colors duration-200';
 
 const LABEL =
-  'block text-xs font-medium text-text-secondary dark:text-text-dark-secondary mb-1';
+  'block text-xs font-medium text-text-secondary dark:text-[#CBD5E1] mb-1';
 
 export function ExpenseFilters({
   categories,
@@ -52,7 +52,7 @@ export function ExpenseFilters({
         <div className="relative">
           <Search
             size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-text-dark-muted pointer-events-none"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-[#94A3B8] pointer-events-none"
             aria-hidden="true"
           />
           <input
@@ -121,7 +121,7 @@ export function ExpenseFilters({
           type="button"
           onClick={onResetFilters}
           className={
-            'flex items-center gap-1 text-sm text-text-muted dark:text-text-dark-muted ' +
+            'flex items-center gap-1 text-sm text-text-muted dark:text-[#94A3B8] ' +
             'hover:text-danger transition-colors duration-150 py-2.5'
           }
         >

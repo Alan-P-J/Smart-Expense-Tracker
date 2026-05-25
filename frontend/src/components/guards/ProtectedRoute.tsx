@@ -12,7 +12,7 @@ export function ProtectedRoute() {
       <div
         role="status"
         aria-live="polite"
-        className="min-h-screen bg-surface-muted dark:bg-surface-dark-muted flex flex-col items-center justify-center gap-4 transition-colors duration-200"
+        className="min-h-screen bg-surface-muted dark:bg-[#081028] flex flex-col items-center justify-center gap-4 transition-colors duration-200"
       >
         <span className="text-primary text-xl font-semibold">ExpenseTrack</span>
         <LoadingSpinner size="lg" label="Loading your workspace…" />

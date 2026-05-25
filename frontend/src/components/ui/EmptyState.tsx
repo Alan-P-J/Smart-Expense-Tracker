@@ -17,10 +17,10 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-16 px-4">
-      <Icon size={48} className="text-text-muted dark:text-text-dark-muted mb-4" aria-hidden="true" />
-      <h2 className="text-lg font-medium text-text-primary dark:text-text-dark-primary">{title}</h2>
+      <Icon size={48} className="text-text-muted dark:text-[#94A3B8] mb-4" aria-hidden="true" />
+      <h2 className="text-lg font-medium text-text-primary dark:text-[#F5F7FF]">{title}</h2>
       {description && (
-        <p className="text-sm text-text-muted dark:text-text-dark-muted mt-1 max-w-md">{description}</p>
+        <p className="text-sm text-text-muted dark:text-[#94A3B8] mt-1 max-w-md">{description}</p>
       )}
       {actionLabel && onAction && (
         <button

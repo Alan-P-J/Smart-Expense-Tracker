@@ -32,18 +32,18 @@ interface CreateUserFormProps {
 
 const SELECT_FIELD =
   'w-full px-3 py-2.5 rounded-lg border ' +
-  'border-border-strong dark:border-border-dark-strong ' +
-  'bg-surface dark:bg-surface-dark ' +
-  'text-text-primary dark:text-text-dark-primary ' +
+  'border-border-strong dark:border-[#2D3956] ' +
+  'bg-surface dark:bg-[#1A233A] ' +
+  'text-text-primary dark:text-[#F5F7FF] ' +
   'focus:outline-none focus:ring-2 focus:ring-primary ' +
   'transition-colors duration-200';
 
 const LABEL =
-  'block text-sm font-medium text-text-secondary dark:text-text-dark-secondary mb-1';
+  'block text-sm font-medium text-text-secondary dark:text-[#CBD5E1] mb-1';
 
 const CANCEL_BTN =
-  'px-4 py-2 rounded-lg border border-border-strong dark:border-border-dark-strong ' +
-  'text-text-secondary dark:text-text-dark-secondary text-sm font-medium ' +
+  'px-4 py-2 rounded-lg border border-border-strong dark:border-[#2D3956] ' +
+  'text-text-secondary dark:text-[#CBD5E1] text-sm font-medium ' +
   'hover:bg-surface-muted dark:hover:bg-border-dark ' +
   'transition-colors duration-200 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
@@ -160,14 +160,14 @@ export function CreateUserForm({ isOpen, onClose, onSuccess }: CreateUserFormPro
         ref={modalRef}
         onClick={(e) => e.stopPropagation()}
         className={
-          'bg-surface dark:bg-surface-dark ' +
-          'rounded-2xl border border-border dark:border-border-dark ' +
+          'bg-surface dark:bg-[#1A233A] ' +
+          'rounded-2xl border border-border dark:border-[#1F2A44] ' +
           'w-full max-w-lg shadow-xl ' +
           'max-h-[90vh] overflow-y-auto'
         }
       >
         <div className="flex justify-between items-center p-6 pb-0">
-          <h2 id={titleId} className="text-lg font-semibold text-text-primary dark:text-text-dark-primary">
+          <h2 id={titleId} className="text-lg font-semibold text-text-primary dark:text-[#F5F7FF]">
             Add user
           </h2>
           <button
@@ -175,7 +175,7 @@ export function CreateUserForm({ isOpen, onClose, onSuccess }: CreateUserFormPro
             onClick={onClose}
             aria-label="Close"
             className={
-              'p-2 rounded-lg text-text-muted dark:text-text-dark-muted ' +
+              'p-2 rounded-lg text-text-muted dark:text-[#94A3B8] ' +
               'hover:bg-surface-muted dark:hover:bg-border-dark ' +
               'transition-colors duration-200 ' +
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
@@ -221,7 +221,7 @@ export function CreateUserForm({ isOpen, onClose, onSuccess }: CreateUserFormPro
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="text-text-muted dark:text-text-dark-muted hover:text-text-secondary"
+                className="text-text-muted dark:text-[#94A3B8] hover:text-text-secondary"
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>

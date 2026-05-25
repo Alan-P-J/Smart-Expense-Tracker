@@ -27,7 +27,7 @@ export function TrendBadge({ value, suffix = '%' }: TrendBadgeProps) {
   }
   return (
     <span
-      className={`${BASE} bg-surface-muted dark:bg-border-dark-strong text-text-muted dark:text-text-dark-muted`}
+      className={`${BASE} bg-surface-muted dark:bg-border-dark-strong text-text-muted dark:text-[#94A3B8]`}
     >
       — {value}{suffix}
     </span>

@@ -9,18 +9,18 @@ interface SidebarItemProps {
 }
 
 const BASE =
-  'flex items-center gap-3 px-4 py-2.5 rounded-lg ' +
+  'flex items-center gap-3 px-3 py-2.5 rounded-xl ' +
   'transition-all duration-200 cursor-pointer w-full text-sm';
 
 const ACTIVE =
-  'bg-primary-light dark:bg-indigo-950 ' +
-  'text-primary dark:text-indigo-400 ' +
-  'shadow-[inset_2px_0_0_0_theme(colors.primary.DEFAULT)] ' +
+  'bg-primary-light dark:bg-primary/15 ' +
+  'text-primary dark:text-primary ' +
   'font-medium';
 
 const INACTIVE =
-  'text-text-muted dark:text-text-dark-muted ' +
-  'hover:bg-surface-muted dark:hover:bg-border-dark-strong/50';
+  'text-text-muted dark:text-[#94A3B8] ' +
+  'hover:bg-surface-muted dark:hover:bg-[#121B32]/60 ' +
+  'hover:text-text-secondary dark:hover:text-text-dark-secondary';
 
 export function SidebarItem({ icon: Icon, label, to, onClick }: SidebarItemProps) {
   return (

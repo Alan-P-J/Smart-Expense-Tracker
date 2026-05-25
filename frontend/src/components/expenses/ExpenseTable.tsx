@@ -20,18 +20,18 @@ const COLUMNS_ADMIN = 5;
 const COLUMNS_VIEWER = 4;
 
 const TH =
-  'text-xs font-medium text-text-muted dark:text-text-dark-muted ' +
+  'text-xs font-medium text-text-muted dark:text-[#94A3B8] ' +
   'uppercase tracking-wider px-4 py-3 text-left';
 
 const TD = 'px-4 py-3 align-middle';
 
 const ROW =
-  'border-b border-border dark:border-border-dark ' +
+  'border-b border-border dark:border-[#1F2A44] ' +
   'hover:bg-surface-muted dark:hover:bg-border-dark/50 ' +
   'transition-colors duration-150';
 
 const ICON_BTN_BASE =
-  'p-1.5 rounded-lg text-text-muted dark:text-text-dark-muted ' +
+  'p-1.5 rounded-lg text-text-muted dark:text-[#94A3B8] ' +
   'transition-colors duration-150 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
 
@@ -56,7 +56,7 @@ export function ExpenseTable({
           {isAdmin && <col className="w-[80px]" />}
         </colgroup>
 
-        <thead className="bg-surface-muted dark:bg-border-dark/40 border-b border-border dark:border-border-dark">
+        <thead className="bg-surface-muted dark:bg-border-dark/40 border-b border-border dark:border-[#1F2A44]">
           <tr>
             <th className={TH}>Date</th>
             <th className={TH}>Title</th>
@@ -98,16 +98,16 @@ export function ExpenseTable({
             const Icon = getCategoryIcon(null);
             return (
               <tr key={e.id} className={ROW}>
-                <td className={`${TD} text-text-muted dark:text-text-dark-muted whitespace-nowrap`}>
+                <td className={`${TD} text-text-muted dark:text-[#94A3B8] whitespace-nowrap`}>
                   {format(parseISO(e.expenseDate), 'dd MMM yyyy')}
                 </td>
 
                 <td className={TD}>
-                  <p className="font-medium text-text-primary dark:text-text-dark-primary truncate">
+                  <p className="font-medium text-text-primary dark:text-[#F5F7FF] truncate">
                     {e.title}
                   </p>
                   {e.description && (
-                    <p className="text-xs text-text-muted dark:text-text-dark-muted truncate max-w-xs">
+                    <p className="text-xs text-text-muted dark:text-[#94A3B8] truncate max-w-xs">
                       {e.description}
                     </p>
                   )}
@@ -122,7 +122,7 @@ export function ExpenseTable({
                     >
                       <Icon size={12} style={{ color: e.categoryColourHex }} />
                     </div>
-                    <span className="text-text-secondary dark:text-text-dark-secondary ml-2 truncate">
+                    <span className="text-text-secondary dark:text-[#CBD5E1] ml-2 truncate">
                       {e.categoryName}
                     </span>
                   </div>

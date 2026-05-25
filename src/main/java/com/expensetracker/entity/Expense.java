@@ -3,6 +3,7 @@ package com.expensetracker.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -47,11 +48,10 @@ public class Expense {
             columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdAt;
 
-    // Managed entirely by the PostgreSQL trigger trg_expenses_updated_at.
-    // insertable=false + updatable=false tells JPA never to write this column —
-    // the trigger sets it on every INSERT and UPDATE automatically.
-    @Column(name = "updated_at", nullable = false,
-            insertable = false, updatable = false,
-            columnDefinition = "TIMESTAMPTZ")
+    // Hibernate sets this on INSERT and entity-level UPDATE; the DB trigger
+    // trg_expenses_updated_at also fires on UPDATE so bulk JPQL updates that
+    // bypass JPA lifecycle still refresh it.
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime updatedAt;
 }

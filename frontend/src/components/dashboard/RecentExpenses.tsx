@@ -1,57 +1,51 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
-import { Receipt } from 'lucide-react';
+import { ArrowRight, Receipt } from 'lucide-react';
 
-import { AppCard } from '../ui/AppCard';
 import { EmptyState } from '../ui/EmptyState';
 import { Skeleton } from '../ui/Skeleton';
+import { CategoryChip } from '../ui/CategoryChip';
 import { dashboardService } from '../../api/services/dashboardService';
 import { formatCurrency } from '../../lib/format';
-import { getCategoryBg, getCategoryIcon } from '../../utils/categoryIconMap';
+import { getCategoryIcon } from '../../utils/categoryIconMap';
 import type { RecentExpenseResponse } from '../../types';
 
-const ROW = 'flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-lg hover:bg-surface-muted dark:hover:bg-border-dark/50 transition-colors duration-150';
+const GRID = 'grid grid-cols-[1.7fr_0.8fr_0.9fr_0.7fr]';
 
 function Row({ expense }: { expense: RecentExpenseResponse }) {
-  // Backend doesn't carry iconName on RecentExpenseResponse yet — falls back to Receipt.
   const Icon = getCategoryIcon(null);
-
+  const color = expense.categoryColourHex;
   return (
-    <div className={ROW}>
-      <div
-        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ backgroundColor: getCategoryBg(expense.categoryColourHex) }}
-        aria-hidden="true"
-      >
-        <Icon size={16} style={{ color: expense.categoryColourHex }} />
+    <div className={GRID + ' items-center px-3 h-[58px] hover:bg-surface-muted dark:hover:bg-[#121B32]/60 transition rounded-lg border-t border-border dark:border-[#1F2A44] first:border-t-0'}>
+      <div className="flex items-center gap-3 min-w-0">
+        <div
+          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: color + '1f', color }}
+          aria-hidden="true"
+        >
+          <Icon size={16} style={{ color }} />
+        </div>
+        <div className="text-[13.5px] font-medium text-text-primary dark:text-[#F5F7FF] truncate">{expense.title}</div>
       </div>
-
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-text-primary dark:text-text-dark-primary truncate max-w-[140px]">
-          {expense.title}
-        </p>
-        <p className="text-xs text-text-muted dark:text-text-dark-muted">
-          {format(parseISO(expense.expenseDate), 'dd MMM')} · {expense.categoryName}
-        </p>
+      <div><CategoryChip name={expense.categoryName} color={color} /></div>
+      <div className="text-[12.5px] text-text-muted dark:text-[#94A3B8] tnum">
+        {format(parseISO(expense.expenseDate), 'MMM dd, yyyy')}
       </div>
-
-      <span className="ml-auto text-sm font-medium text-spend">
+      <div className="text-right text-[13.5px] font-semibold text-text-primary dark:text-[#F5F7FF] tnum pr-1">
         {formatCurrency(expense.amount)}
-      </span>
+      </div>
     </div>
   );
 }
 
 function LoadingRow() {
   return (
-    <div className="flex items-center gap-3 py-2.5 px-2">
-      <Skeleton className="w-9 h-9 rounded-xl" />
-      <div className="flex-1">
-        <Skeleton className="h-3.5 w-32" />
-        <Skeleton className="h-3 w-24 mt-1" />
-      </div>
-      <Skeleton className="h-3.5 w-16" />
+    <div className={GRID + ' items-center px-3 h-[58px] border-t border-border dark:border-[#1F2A44] first:border-t-0'}>
+      <div className="flex items-center gap-3"><Skeleton className="w-9 h-9 rounded-lg" /><Skeleton className="h-4 w-32" /></div>
+      <Skeleton className="h-5 w-16" />
+      <Skeleton className="h-3.5 w-24" />
+      <Skeleton className="h-4 w-16 ml-auto" />
     </div>
   );
 }
@@ -64,36 +58,22 @@ export function RecentExpenses() {
   });
 
   return (
-    <AppCard>
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-medium text-text-primary dark:text-text-dark-primary">
-          Recent expenses
-        </h2>
+    <div className="fade-up rounded-2xl bg-white dark:bg-[#1A233A] border border-border dark:border-[#1F2A44] p-5 sm:p-6 shadow-card h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-[15px] font-semibold text-text-primary dark:text-[#F5F7FF]">Recent Expenses</h3>
         <Link
           to="/expenses"
-          className="text-sm text-primary hover:text-primary-hover hover:underline transition-colors duration-150"
+          className="text-[12.5px] font-semibold text-accent hover:opacity-80 inline-flex items-center gap-1 transition"
         >
-          View all
+          View All <ArrowRight size={13} aria-hidden="true" />
         </Link>
       </div>
 
-      {isLoading && (
-        <div className="divide-y divide-border dark:divide-border-dark">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <LoadingRow key={i} />
-          ))}
-        </div>
-      )}
-
       {isError && (
-        <EmptyState
-          icon={Receipt}
-          title="Couldn't load recent expenses"
-          description="Refresh to try again."
-        />
+        <EmptyState icon={Receipt} title="Couldn't load recent expenses" description="Refresh to try again." />
       )}
 
-      {!isLoading && !isError && (!data || data.length === 0) && (
+      {!isError && !isLoading && (!data || data.length === 0) && (
         <EmptyState
           icon={Receipt}
           title="No expenses yet"
@@ -103,13 +83,21 @@ export function RecentExpenses() {
         />
       )}
 
-      {!isLoading && !isError && data && data.length > 0 && (
-        <div className="divide-y divide-border dark:divide-border-dark">
-          {data.map((expense) => (
-            <Row key={expense.id} expense={expense} />
-          ))}
+      {(isLoading || (data && data.length > 0)) && (
+        <div>
+          <div className={GRID + ' px-3 pb-3 text-[11px] font-semibold tracking-wider uppercase text-text-muted dark:text-[#94A3B8] border-b border-border dark:border-[#1F2A44]'}>
+            <div>Description</div>
+            <div>Category</div>
+            <div>Date</div>
+            <div className="text-right pr-1">Amount</div>
+          </div>
+          <div>
+            {isLoading
+              ? Array.from({ length: 5 }).map((_, i) => <LoadingRow key={i} />)
+              : data?.map((expense) => <Row key={expense.id} expense={expense} />)}
+          </div>
         </div>
       )}
-    </AppCard>
+    </div>
   );
 }

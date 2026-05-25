@@ -13,6 +13,8 @@ import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -37,16 +39,28 @@ public class ExportService {
     private static final int CSV_PAGE_SIZE = 500;
     private static final String CSV_HEADER = "id,title,amount,expenseDate,category,description,createdBy";
     private static final DateTimeFormatter MONTH_FMT = DateTimeFormatter.ofPattern("MMMM yyyy");
+    private static final DateTimeFormatter ISO_FMT = DateTimeFormatter.ISO_LOCAL_DATE;
 
     private final ExpenseRepository expenseRepo;
+
+    // Self-reference (lazy to break the circular bean wiring) so internal
+    // calls to @Transactional methods go through the Spring proxy instead of
+    // self-invoking `this.x(...)` — required because the streaming lambda
+    // executes after the controller returns and the inner txn is the only
+    // session covering the lazy associations on Expense.category/createdBy.
+    @Autowired
+    @Lazy
+    private ExportService self;
 
     // ────────────────────────────────────────────────────────────
     // CSV
     // ────────────────────────────────────────────────────────────
 
-    public StreamingResponseBody generateCsv(HttpServletResponse response) {
+    public StreamingResponseBody generateCsv(HttpServletResponse response,
+                                             LocalDate from, LocalDate to) {
         response.setContentType("text/csv");
-        response.setHeader("Content-Disposition", "attachment; filename=\"expenses.csv\"");
+        response.setHeader("Content-Disposition",
+                "attachment; filename=\"" + csvFilename(from, to) + "\"");
 
         return outputStream -> {
             try (BufferedWriter w = new BufferedWriter(
@@ -58,7 +72,7 @@ public class ExportService {
                 int pageNum = 0;
                 Page<CsvRow> page;
                 do {
-                    page = fetchCsvPage(pageNum, CSV_PAGE_SIZE);
+                    page = self.fetchCsvPage(pageNum, CSV_PAGE_SIZE, from, to);
                     for (CsvRow row : page.getContent()) {
                         w.write(row.toCsvLine());
                         w.newLine();
@@ -76,31 +90,46 @@ public class ExportService {
      * primitives + strings, so the streaming lambda never touches a JPA proxy.
      */
     @Transactional(readOnly = true)
-    public Page<CsvRow> fetchCsvPage(int pageNum, int pageSize) {
+    public Page<CsvRow> fetchCsvPage(int pageNum, int pageSize, LocalDate from, LocalDate to) {
         Sort sort = Sort.by(Sort.Direction.DESC, "expenseDate")
                 .and(Sort.by(Sort.Direction.DESC, "createdAt"));
-        return expenseRepo.findAll(PageRequest.of(pageNum, pageSize, sort))
+        PageRequest pageReq = PageRequest.of(pageNum, pageSize, sort);
+        if (from == null && to == null) {
+            return expenseRepo.findAll(pageReq).map(CsvRow::from);
+        }
+        return expenseRepo.findAll(ExpenseDateRangeSpec.between(from, to), pageReq)
                 .map(CsvRow::from);
     }
 
+    private static String csvFilename(LocalDate from, LocalDate to) {
+        if (from == null && to == null) return "expenses.csv";
+        String start = from == null ? "start" : from.format(ISO_FMT);
+        String end = to == null ? "end" : to.format(ISO_FMT);
+        return "expenses-" + start + "_to_" + end + ".csv";
+    }
+
     // ────────────────────────────────────────────────────────────
-    // PDF (current month only — bounded data)
+    // PDF (caller-supplied range, falls back to current month)
     // ────────────────────────────────────────────────────────────
 
-    public StreamingResponseBody generatePdf(HttpServletResponse response) {
+    public StreamingResponseBody generatePdf(HttpServletResponse response,
+                                             LocalDate from, LocalDate to) {
         response.setContentType("application/pdf");
-        response.setHeader("Content-Disposition", "attachment; filename=\"expense-report.pdf\"");
+        response.setHeader("Content-Disposition",
+                "attachment; filename=\"" + pdfFilename(from, to) + "\"");
 
         LocalDate today = LocalDate.now();
-        LocalDate monthStart = today.withDayOfMonth(1);
-        PdfData data = loadPdfData(monthStart, today);
+        LocalDate start = from != null ? from : today.withDayOfMonth(1);
+        LocalDate end = to != null ? to : today;
+        PdfData data = self.loadPdfData(start, end);
+        String periodLabel = pdfPeriodLabel(start, end);
 
         return outputStream -> {
             try (PdfWriter writer = new PdfWriter(outputStream);
                  PdfDocument pdfDoc = new PdfDocument(writer);
                  Document doc = new Document(pdfDoc)) {
 
-                doc.add(new Paragraph("Expense Report — " + today.format(MONTH_FMT))
+                doc.add(new Paragraph("Expense Report — " + periodLabel)
                         .setBold().setFontSize(18));
 
                 // Summary block
@@ -161,6 +190,22 @@ public class ExportService {
         return new PdfData(rows, total, topCategory);
     }
 
+    private static String pdfFilename(LocalDate from, LocalDate to) {
+        if (from == null && to == null) return "expense-report.pdf";
+        String start = from == null ? "start" : from.format(ISO_FMT);
+        String end = to == null ? "end" : to.format(ISO_FMT);
+        return "expense-report-" + start + "_to_" + end + ".pdf";
+    }
+
+    private static String pdfPeriodLabel(LocalDate start, LocalDate end) {
+        boolean sameMonth = start.getYear() == end.getYear()
+                && start.getMonth() == end.getMonth()
+                && start.getDayOfMonth() == 1
+                && end.equals(start.withDayOfMonth(start.lengthOfMonth()));
+        if (sameMonth) return start.format(MONTH_FMT);
+        return start.format(ISO_FMT) + " → " + end.format(ISO_FMT);
+    }
+
     private Cell headerCell(String text) {
         return new Cell()
                 .add(new Paragraph(text).setBold())
@@ -218,11 +263,23 @@ public class ExportService {
 
     public record PdfData(List<PdfRow> rows, BigDecimal totalAmount, String topCategory) {}
 
-    /** Self-contained date-range spec — avoids pulling in ExpenseSpecification. */
+    /** Self-contained date-range spec — avoids pulling in ExpenseSpecification.
+     *  Both bounds are optional so callers can do "from only", "to only", or full range. */
     private static final class ExpenseDateRangeSpec {
         static org.springframework.data.jpa.domain.Specification<Expense> between(
                 LocalDate start, LocalDate end) {
-            return (root, q, cb) -> cb.between(root.get("expenseDate"), start, end);
+            return (root, q, cb) -> {
+                if (start != null && end != null) {
+                    return cb.between(root.get("expenseDate"), start, end);
+                }
+                if (start != null) {
+                    return cb.greaterThanOrEqualTo(root.get("expenseDate"), start);
+                }
+                if (end != null) {
+                    return cb.lessThanOrEqualTo(root.get("expenseDate"), end);
+                }
+                return cb.conjunction();
+            };
         }
     }
 }

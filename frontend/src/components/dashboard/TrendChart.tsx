@@ -1,136 +1,151 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { TrendingUp } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
 
-import { AppCard } from '../ui/AppCard';
 import { EmptyState } from '../ui/EmptyState';
 import { Skeleton } from '../ui/Skeleton';
+import { PeriodSelect } from '../ui/PeriodSelect';
 import { dashboardService } from '../../api/services/dashboardService';
-import { useChartColors } from '../../hooks/useChartColors';
 import { formatCurrency } from '../../lib/format';
 
-// Brand indigo — same hex as design token `primary.DEFAULT`. Kept inline
-// because Recharts SVG props don't read Tailwind classes.
-const PRIMARY_HEX = '#4F46E5';
+const PRIMARY = '#5B5CF0';
+// Chart aggregates by month; "Last 30 Days" was visually meaningless at month
+// granularity so it's dropped. These options all map to clean monthly windows.
+const PERIODS = ['Last 3 Months', 'Last 6 Months', 'Last 12 Months', 'YTD'];
+
+/** Map a period label to ISO yyyy-MM-dd {from, to} bounds for the API. */
+function periodToRange(period: string): { from: string; to: string } {
+  const today = new Date();
+  const to = formatISODate(today);
+  const from = (() => {
+    if (period === 'YTD') {
+      return formatISODate(new Date(today.getFullYear(), 0, 1));
+    }
+    const monthsBack =
+      period === 'Last 12 Months' ? 11
+      : period === 'Last 3 Months' ? 2
+      : /* Last 6 Months (default) */ 5;
+    const d = new Date(today.getFullYear(), today.getMonth() - monthsBack, 1);
+    return formatISODate(d);
+  })();
+  return { from, to };
+}
+
+function formatISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 interface ChartRow {
-  label: string;       // "Jan", "Feb", …
-  total: number;       // numeric for Recharts
-  fullMonth: string;   // "January 2025" for tooltip
+  m: string;
+  v: number;
+  fullMonth: string;
 }
 
-// Recharts 3.x narrowed TooltipProps so `payload` isn't on the public type.
-interface ChartTooltipProps {
+interface TrendTooltipProps {
   active?: boolean;
   payload?: Array<{ payload: ChartRow }>;
-  tooltipBg: string;
-  tooltipBorder: string;
 }
 
-function ChartTooltip({ active, payload, tooltipBg, tooltipBorder }: ChartTooltipProps) {
+function TrendTooltip({ active, payload }: TrendTooltipProps) {
   if (!active || !payload?.length) return null;
-  const row = payload[0].payload;
+  const p = payload[0].payload;
   return (
-    <div
-      className="rounded-xl px-3 py-2 shadow-lg text-sm border"
-      style={{ backgroundColor: tooltipBg, borderColor: tooltipBorder }}
-    >
-      <div className="font-medium text-text-primary dark:text-text-dark-primary">
-        {row.fullMonth}
-      </div>
-      <div className="text-spend font-medium">{formatCurrency(row.total)}</div>
+    <div className="rounded-xl bg-white dark:bg-[#121B32] border border-border dark:border-[#2D3956] px-3 py-2 shadow-pop">
+      <div className="text-[11px] text-text-muted dark:text-[#94A3B8]">{p.fullMonth}</div>
+      <div className="text-[14px] font-semibold text-text-primary dark:text-[#F5F7FF] tnum">{formatCurrency(p.v)}</div>
     </div>
   );
 }
 
 export function TrendChart() {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['dashboard', 'trends'],
-    queryFn: dashboardService.getTrends,
-  });
-  const { gridColor, tickColor, tooltipBg, tooltipBorder } = useChartColors();
+  const [period, setPeriod] = useState('Last 6 Months');
+  const { from, to } = useMemo(() => periodToRange(period), [period]);
 
-  // Transform "YYYY-MM" → { label: "MMM", total, fullMonth: "MMMM yyyy" }.
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['dashboard', 'trends', from, to],
+    queryFn: () => dashboardService.getTrends({ from, to }),
+  });
+
   const rows: ChartRow[] = useMemo(() => {
     if (!data?.months?.length) return [];
-    return data.months.map((m) => {
-      const date = parse(m.month, 'yyyy-MM', new Date());
+    return data.months.map((mo) => {
+      const date = parse(mo.month, 'yyyy-MM', new Date());
       return {
-        label: format(date, 'MMM'),
-        total: Number(m.total),
+        m: format(date, "MMM ''yy"),
+        v: Number(mo.total),
         fullMonth: format(date, 'MMMM yyyy'),
       };
     });
   }, [data]);
 
+  const max = rows.length ? Math.max(...rows.map((d) => d.v)) : 0;
+  const yMax = Math.max(Math.ceil(max / 10000) * 10000, 40000);
+
   return (
-    <AppCard>
-      <div className="mb-4">
-        <h2 className="text-sm font-medium text-text-primary dark:text-text-dark-primary">
-          Monthly trend
-        </h2>
-        <p className="text-xs text-text-muted dark:text-text-dark-muted">Last 6 months</p>
+    <div className="fade-up rounded-2xl bg-white dark:bg-[#1A233A] border border-border dark:border-[#1F2A44] p-5 sm:p-6 pb-2 shadow-card h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-[15px] font-semibold text-text-primary dark:text-[#F5F7FF]">Expense Trend</h3>
+        <PeriodSelect value={period} options={PERIODS} onChange={setPeriod} />
       </div>
 
-      {isLoading && <Skeleton className="h-[240px] w-full" />}
+      {isLoading && <Skeleton className="h-[260px] w-full" />}
 
       {isError && (
-        <EmptyState
-          icon={TrendingUp}
-          title="Couldn't load chart"
-          description="Refresh to try again."
-        />
+        <EmptyState icon={TrendingUp} title="Couldn't load chart" description="Refresh to try again." />
       )}
 
       {!isLoading && !isError && rows.length === 0 && (
-        <EmptyState
-          icon={TrendingUp}
-          title="No trend data yet"
-          description="Spend data will appear over time."
-        />
+        <EmptyState icon={TrendingUp} title="No trend data yet" description="Spend data will appear over time." />
       )}
 
       {!isLoading && !isError && rows.length > 0 && (
-        <ResponsiveContainer width="100%" height={240}>
-          <LineChart data={rows} margin={{ top: 4, right: 4, left: 8, bottom: 4 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
-            <XAxis
-              dataKey="label"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: tickColor }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: tickColor }}
-              tickFormatter={(v: number) => '₹' + (v / 1000).toFixed(0) + 'k'}
-            />
-            <Tooltip
-              content={<ChartTooltip tooltipBg={tooltipBg} tooltipBorder={tooltipBorder} />}
-              cursor={{ stroke: gridColor }}
-            />
-            <Line
-              dataKey="total"
-              stroke={PRIMARY_HEX}
-              strokeWidth={2}
-              type="monotone"
-              dot={{ fill: PRIMARY_HEX, r: 3, strokeWidth: 0 }}
-              activeDot={{ r: 5, fill: PRIMARY_HEX, strokeWidth: 0 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <div className="flex-1 min-h-[260px] relative">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={rows} margin={{ top: 14, right: 16, left: 8, bottom: 6 }}>
+              <defs>
+                <linearGradient id="trend-gradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={PRIMARY} stopOpacity={0.42} />
+                  <stop offset="100%" stopColor={PRIMARY} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="0" vertical={false} />
+              <XAxis dataKey="m" axisLine={false} tickLine={false} dy={6} />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                width={48}
+                tickFormatter={(v: number) => (v === 0 ? '₹0' : '₹' + (v / 1000).toFixed(0) + 'K')}
+                domain={[0, yMax]}
+              />
+              <Tooltip cursor={{ stroke: 'rgba(91, 92, 240, 0.4)', strokeDasharray: '4 4' }} content={<TrendTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="v"
+                stroke={PRIMARY}
+                strokeWidth={2.2}
+                fill="url(#trend-gradient)"
+                dot={{ r: 3.5, fill: PRIMARY, stroke: 'var(--c-dot-stroke)', strokeWidth: 2 }}
+                activeDot={{ r: 5.5, fill: PRIMARY, stroke: '#fff', strokeWidth: 2 }}
+                isAnimationActive
+                animationDuration={1100}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       )}
-    </AppCard>
+    </div>
   );
 }

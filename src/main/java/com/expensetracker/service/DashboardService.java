@@ -58,10 +58,16 @@ public class DashboardService {
     }
 
     public TrendResponse getTrends() {
-        // 6 months including current: today.minusMonths(5), truncated to month start.
-        LocalDate since = LocalDate.now().minusMonths(5).withDayOfMonth(1);
+        // Default: 6 months including current.
+        LocalDate today = LocalDate.now();
+        LocalDate since = today.minusMonths(5).withDayOfMonth(1);
+        return getTrends(since, today);
+    }
 
-        List<MonthlyTotal> months = expenseRepo.monthlyTotals(since).stream()
+    public TrendResponse getTrends(LocalDate from, LocalDate to) {
+        // Caller controls the window — used by the dashboard's period filter.
+        // Both bounds are inclusive and aggregated at month granularity.
+        List<MonthlyTotal> months = expenseRepo.monthlyTotalsBetween(from, to).stream()
                 .map(row -> new MonthlyTotal((String) row[0], (BigDecimal) row[1]))
                 .toList();
 
@@ -71,8 +77,11 @@ public class DashboardService {
     public List<CategorySpendResponse> getByCategory() {
         LocalDate today = LocalDate.now();
         LocalDate monthStart = today.withDayOfMonth(1);
+        return getByCategory(monthStart, today);
+    }
 
-        return expenseRepo.sumByCategoryBetween(monthStart, today).stream()
+    public List<CategorySpendResponse> getByCategory(LocalDate from, LocalDate to) {
+        return expenseRepo.sumByCategoryBetween(from, to).stream()
                 .map(row -> new CategorySpendResponse(
                         (Long) row[0],
                         (String) row[1],
