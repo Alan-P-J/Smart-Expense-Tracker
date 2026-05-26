@@ -27,8 +27,14 @@ public class DashboardController {
     private final DashboardService service;
 
     @GetMapping("/summary")
-    @Operation(summary = "Current-month totals, top category, and budget-alert count")
-    public ResponseEntity<DashboardSummaryResponse> summary() {
+    @Operation(summary = "Totals, top category, and budget-alert count for from/to "
+            + "(defaults to current month). Alerts always use the current calendar month.")
+    public ResponseEntity<DashboardSummaryResponse> summary(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        if (from != null && to != null) {
+            return ResponseEntity.ok(service.getSummary(from, to));
+        }
         return ResponseEntity.ok(service.getSummary());
     }
 

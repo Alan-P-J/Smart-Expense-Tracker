@@ -19,6 +19,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -42,6 +43,84 @@ const SQUARE_BUTTON =
   'text-text-muted dark:text-[#94A3B8] ' +
   'hover:text-text-primary dark:hover:text-[#F5F7FF] ' +
   'transition flex items-center justify-center';
+
+// ────────────────────────────────────────────────────────────
+// Global search — submit goes to /expenses?search=<term>.
+//   • Enter or the form submit triggers navigation
+//   • ⌘K / Ctrl-K focuses the input from anywhere
+//   • Esc clears + blurs while focused
+// The destination page (ExpensesPage) reads the param on mount and seeds
+// its own filter state, so the URL is the only handoff.
+// ────────────────────────────────────────────────────────────
+function GlobalSearch() {
+  const navigate = useNavigate();
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [value, setValue] = useState('');
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const isModK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
+      if (isModK) {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = value.trim();
+    if (!q) return;
+    navigate(`/expenses?search=${encodeURIComponent(q)}`);
+    inputRef.current?.blur();
+  };
+
+  return (
+    <form onSubmit={submit} role="search" className="flex-1 max-w-[440px] relative">
+      <Search
+        size={15}
+        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted dark:text-[#94A3B8]"
+        aria-hidden="true"
+      />
+      <input
+        ref={inputRef}
+        type="search"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            setValue('');
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        placeholder="Search expenses, categories…"
+        aria-label="Search expenses"
+        className={
+          'w-full h-10 rounded-lg bg-white dark:bg-[#1A233A] ' +
+          'border border-border dark:border-[#2D3956] ' +
+          'pl-10 pr-3 sm:pr-14 text-[13px] ' +
+          'text-text-primary dark:text-[#F5F7FF] ' +
+          'placeholder:text-text-muted dark:placeholder:text-[#94A3B8] ' +
+          'focus:border-accent/60 transition-colors'
+        }
+      />
+      <kbd
+        className={
+          'hidden lg:flex absolute right-3 top-1/2 -translate-y-1/2 ' +
+          'h-[20px] px-1.5 items-center gap-1 rounded ' +
+          'border border-border dark:border-[#2D3956] ' +
+          'text-[10.5px] text-text-muted dark:text-[#94A3B8] font-mono'
+        }
+        title="Focus search (Ctrl/⌘ K)"
+      >
+        ⌘K
+      </kbd>
+    </form>
+  );
+}
 
 // ────────────────────────────────────────────────────────────
 // Quick-add menu (chevron next to Add Expense, dashboard only)
@@ -314,36 +393,10 @@ export function Topbar({ onOpenMobileDrawer, onToggleCollapse }: TopbarProps) {
           <PanelLeft size={16} aria-hidden="true" />
         </button>
 
-        {/* Search */}
-        <div className="flex-1 max-w-[440px] relative">
-          <Search
-            size={15}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted dark:text-[#94A3B8]"
-            aria-hidden="true"
-          />
-          <input
-            type="text"
-            placeholder="Search expenses, categories…"
-            className={
-              'w-full h-10 rounded-lg bg-white dark:bg-[#1A233A] ' +
-              'border border-border dark:border-[#2D3956] ' +
-              'pl-10 pr-3 sm:pr-14 text-[13px] ' +
-              'text-text-primary dark:text-[#F5F7FF] ' +
-              'placeholder:text-text-muted dark:placeholder:text-[#94A3B8] ' +
-              'focus:border-accent/60 transition-colors'
-            }
-          />
-          <kbd
-            className={
-              'hidden lg:flex absolute right-3 top-1/2 -translate-y-1/2 ' +
-              'h-[20px] px-1.5 items-center gap-1 rounded ' +
-              'border border-border dark:border-[#2D3956] ' +
-              'text-[10.5px] text-text-muted dark:text-[#94A3B8] font-mono'
-            }
-          >
-            ⌘K
-          </kbd>
-        </div>
+        {/* Search — submits to /expenses with the typed text as a filter.
+            ⌘K (Mac) / Ctrl-K (everywhere else) focuses the input from
+            anywhere in the app. */}
+        <GlobalSearch />
       </div>
 
       {/* Right cluster — theme toggle now lives inside the profile menu */}

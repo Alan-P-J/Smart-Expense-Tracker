@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
 
-import { DateRangePill } from '../components/ui/DateRangePill';
+import { DateRangePill, computeRange, type DateRange } from '../components/ui/DateRangePill';
 import { SummaryCards } from '../components/dashboard/SummaryCards';
 import { SpendingChart } from '../components/dashboard/SpendingChart';
 import { TrendChart } from '../components/dashboard/TrendChart';
@@ -14,7 +15,14 @@ import { useAuth } from '../hooks/useAuth';
 export function DashboardPage() {
   const { user, isAdmin } = useAuth();
 
-  const summary    = useQuery({ queryKey: ['dashboard', 'summary'],     queryFn: dashboardService.getSummary });
+  // Pill drives the KPI cards' date scope. Default "This Month" preserves
+  // the pre-existing card behaviour for users who never touch the pill.
+  const [range, setRange] = useState<DateRange>(() => computeRange('This Month'));
+
+  const summary    = useQuery({
+    queryKey: ['dashboard', 'summary', range.from, range.to],
+    queryFn: () => dashboardService.getSummary({ from: range.from, to: range.to }),
+  });
   const trends     = useQuery({ queryKey: ['dashboard', 'trends'],      queryFn: () => dashboardService.getTrends() });
   const byCategory = useQuery({ queryKey: ['dashboard', 'by-category'], queryFn: () => dashboardService.getByCategory() });
   const recent     = useQuery({ queryKey: ['dashboard', 'recent'],      queryFn: dashboardService.getRecent });
@@ -43,7 +51,7 @@ export function DashboardPage() {
               : "Here's your financial overview."}
           </p>
         </div>
-        <DateRangePill />
+        <DateRangePill value={range} onChange={setRange} />
       </div>
 
       {allFailed ? (
@@ -62,7 +70,7 @@ export function DashboardPage() {
         </div>
       ) : (
         <>
-          <SummaryCards />
+          <SummaryCards range={range} />
 
           {/* Trend (wider) + Donut */}
           <div className="grid grid-cols-1 xl:grid-cols-[1.35fr_1fr] gap-4 sm:gap-5">

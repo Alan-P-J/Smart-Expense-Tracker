@@ -28,8 +28,10 @@ public class JwtUtil {
 
     public enum TokenType { ACCESS, REFRESH }
 
-    private static final String CLAIM_ROLE = "role";
-    private static final String CLAIM_TYPE = "typ";
+    private static final String CLAIM_ROLE           = "role";
+    private static final String CLAIM_TYPE           = "typ";
+    private static final String CLAIM_COMPANY_ID     = "companyId";
+    private static final String CLAIM_IS_SUPER_ADMIN = "isSuperAdmin";
 
     private final SecretKey accessKey;
     private final SecretKey refreshKey;
@@ -45,9 +47,12 @@ public class JwtUtil {
 
     public String generateAccessToken(AdminUser user) {
         long now = System.currentTimeMillis();
+        Long companyId = user.getCompany() == null ? null : user.getCompany().getId();
         return Jwts.builder()
                 .subject(user.getId().toString())
                 .claim(CLAIM_ROLE, user.getRole().name())
+                .claim(CLAIM_COMPANY_ID, companyId)
+                .claim(CLAIM_IS_SUPER_ADMIN, user.isSuperAdmin())
                 .claim(CLAIM_TYPE, TokenType.ACCESS.name())
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + accessExpiryMs))

@@ -90,6 +90,7 @@ function UsersStats({ users }: { users: EnrichedUser[] }) {
 // List view row
 // ────────────────────────────────────────────────────────────
 
+// Desktop-only grid. Mobile uses a stacked flex layout (see UserRow).
 const ROW_GRID = 'grid grid-cols-[minmax(200px,2fr)_minmax(0,100px)_minmax(0,120px)_minmax(0,120px)_minmax(0,1fr)_90px] items-center gap-3 px-4';
 
 interface UserRowProps {
@@ -101,52 +102,81 @@ interface UserRowProps {
 }
 
 function UserRow({ user, canEdit, onOpen, onEdit, onSuspend }: UserRowProps) {
+  const ActionButtons = canEdit ? (
+    <>
+      <span
+        onClick={(e) => { e.stopPropagation(); onEdit(user); }}
+        role="button"
+        title="Edit role"
+        aria-label="Edit role"
+        className="w-8 h-8 rounded-lg hover:bg-surface-muted dark:hover:bg-[#121B32] text-text-muted dark:text-[#94A3B8] hover:text-text-primary dark:hover:text-[#F5F7FF] transition flex items-center justify-center cursor-pointer"
+      >
+        <Pencil size={14} aria-hidden="true" />
+      </span>
+      <span
+        onClick={(e) => { e.stopPropagation(); onSuspend(user); }}
+        role="button"
+        title={user.status === 'Suspended' ? 'Already suspended' : 'Suspend'}
+        aria-label={user.status === 'Suspended' ? 'Already suspended' : 'Suspend'}
+        className="w-8 h-8 rounded-lg hover:bg-danger/10 text-text-muted dark:text-[#94A3B8] hover:text-danger transition flex items-center justify-center cursor-pointer"
+      >
+        <ShieldOff size={14} aria-hidden="true" />
+      </span>
+    </>
+  ) : null;
+
   return (
     <button
       type="button"
       onClick={() => onOpen(user)}
       className={
-        'w-full text-left ' + ROW_GRID +
-        ' h-[68px] border-t border-border dark:border-[#1F2A44] first:border-t-0 ' +
+        'w-full text-left border-t border-border dark:border-[#1F2A44] first:border-t-0 ' +
         'hover:bg-surface-muted dark:hover:bg-[#121B32]/60 transition group'
       }
     >
-      <div className="flex items-center gap-3 min-w-0 pr-3">
+      {/* ── Desktop / tablet ≥ md: 6-column grid ────────────────── */}
+      <div className={'hidden md:grid ' + ROW_GRID + ' h-[68px]'}>
+        <div className="flex items-center gap-3 min-w-0 pr-3">
+          <Avatar user={user} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="text-[13.5px] font-semibold text-text-primary dark:text-[#F5F7FF] truncate">{user.name}</div>
+              {user.mfa && <MfaShield />}
+            </div>
+            <div className="text-[11.5px] text-text-muted dark:text-[#94A3B8] truncate">{user.email}</div>
+          </div>
+        </div>
+        <div><RoleBadge role={user.role} /></div>
+        <div className="text-[12.5px] text-text-muted dark:text-[#94A3B8] truncate">{user.department}</div>
+        <div><StatusBadge status={user.status} /></div>
+        <div className="text-[12px] text-text-muted dark:text-[#94A3B8] truncate">{user.lastActive}</div>
+        <div className="flex items-center justify-end gap-1 opacity-50 group-hover:opacity-100 transition">
+          {ActionButtons}
+        </div>
+      </div>
+
+      {/* ── Mobile < md: stacked layout ─────────────────────────── */}
+      <div className="md:hidden flex items-start gap-3 px-4 py-3">
         <Avatar user={user} />
-        <div className="min-w-0">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 min-w-0">
             <div className="text-[13.5px] font-semibold text-text-primary dark:text-[#F5F7FF] truncate">{user.name}</div>
             {user.mfa && <MfaShield />}
           </div>
           <div className="text-[11.5px] text-text-muted dark:text-[#94A3B8] truncate">{user.email}</div>
+          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            <RoleBadge role={user.role} />
+            <StatusBadge status={user.status} />
+            <span className="text-[11px] text-text-muted dark:text-[#94A3B8]">·</span>
+            <span className="text-[11px] text-text-muted dark:text-[#94A3B8] truncate">{user.department}</span>
+            <span className="text-[11px] text-text-muted dark:text-[#94A3B8]">·</span>
+            <span className="text-[11px] text-text-muted dark:text-[#94A3B8] truncate">{user.lastActive}</span>
+          </div>
         </div>
-      </div>
-      <div><RoleBadge role={user.role} /></div>
-      <div className="text-[12.5px] text-text-muted dark:text-[#94A3B8] truncate">{user.department}</div>
-      <div><StatusBadge status={user.status} /></div>
-      <div className="text-[12px] text-text-muted dark:text-[#94A3B8] truncate">{user.lastActive}</div>
-      <div className="flex items-center justify-end gap-1 opacity-50 group-hover:opacity-100 transition">
         {canEdit && (
-          <>
-            <span
-              onClick={(e) => { e.stopPropagation(); onEdit(user); }}
-              role="button"
-              title="Edit role"
-              aria-label="Edit role"
-              className="w-8 h-8 rounded-lg hover:bg-surface-muted dark:hover:bg-[#121B32] text-text-muted dark:text-[#94A3B8] hover:text-text-primary dark:hover:text-[#F5F7FF] transition flex items-center justify-center cursor-pointer"
-            >
-              <Pencil size={14} aria-hidden="true" />
-            </span>
-            <span
-              onClick={(e) => { e.stopPropagation(); onSuspend(user); }}
-              role="button"
-              title={user.status === 'Suspended' ? 'Already suspended' : 'Suspend'}
-              aria-label={user.status === 'Suspended' ? 'Already suspended' : 'Suspend'}
-              className="w-8 h-8 rounded-lg hover:bg-danger/10 text-text-muted dark:text-[#94A3B8] hover:text-danger transition flex items-center justify-center cursor-pointer"
-            >
-              <ShieldOff size={14} aria-hidden="true" />
-            </span>
-          </>
+          <div className="flex flex-col items-center gap-1 shrink-0">
+            {ActionButtons}
+          </div>
         )}
       </div>
     </button>
@@ -414,7 +444,8 @@ export function UsersPage() {
         </div>
       ) : view === 'list' ? (
         <div className="rounded-2xl bg-white dark:bg-[#1A233A] border border-border dark:border-[#1F2A44] shadow-card overflow-hidden">
-          <div className={ROW_GRID + ' h-10 border-b border-border dark:border-[#1F2A44] bg-surface-muted/60 dark:bg-[#081028]/40 text-[11px] font-semibold tracking-wider uppercase text-text-muted dark:text-[#94A3B8]'}>
+          {/* Table header is desktop-only; mobile rows are self-describing. */}
+          <div className={'hidden md:grid ' + ROW_GRID + ' h-10 border-b border-border dark:border-[#1F2A44] bg-surface-muted/60 dark:bg-[#081028]/40 text-[11px] font-semibold tracking-wider uppercase text-text-muted dark:text-[#94A3B8]'}>
             <div>User</div>
             <div>Role</div>
             <div>Department</div>

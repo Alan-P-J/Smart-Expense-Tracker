@@ -26,21 +26,21 @@ public class UserManagementController {
     private final UserManagementService service;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @Operation(summary = "List all admin users")
     public ResponseEntity<List<UserResponse>> list() {
         return ResponseEntity.ok(service.listUsers());
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @Operation(summary = "Create a new admin user (defaults to VIEWER role)")
     public ResponseEntity<UserResponse> create(@Valid @RequestBody CreateUserRequest request) {
         return ResponseEntity.status(201).body(service.createUser(request));
     }
 
     @PutMapping("/{id}/role")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @Operation(summary = "Change a user's role (ADMIN or VIEWER). Cannot target self.")
     public ResponseEntity<UserResponse> changeRole(@PathVariable Long id,
                                                    @RequestBody Map<String, @NotBlank String> body) {
@@ -48,7 +48,7 @@ public class UserManagementController {
     }
 
     @PutMapping("/{id}/deactivate")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @Operation(summary = "Deactivate a user and revoke their refresh tokens. Cannot target self.")
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
         service.deactivateUser(id);

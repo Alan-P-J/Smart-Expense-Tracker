@@ -19,7 +19,10 @@ public class Category {
     @EqualsAndHashCode.Include
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
+    // Not globally unique any more (multi-tenancy): two companies may each
+    // own a custom "Food" category. CategoryService enforces uniqueness
+    // within (name, visible-to-company) at application level.
+    @Column(nullable = false, length = 100)
     private String name;
 
     @Column(name = "colour_hex", nullable = false, length = 7)
@@ -33,6 +36,13 @@ public class Category {
     @Column(name = "is_default", nullable = false)
     @Builder.Default
     private boolean isDefault = false;
+
+    // Nullable on purpose:
+    //   NULL     = global default category (visible to every company)
+    //   NOT NULL = company-specific custom category
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false,

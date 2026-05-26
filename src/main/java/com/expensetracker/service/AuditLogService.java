@@ -4,7 +4,10 @@ import com.expensetracker.dto.response.AuditLogResponse;
 import com.expensetracker.entity.AdminUser;
 import com.expensetracker.entity.AuditLog;
 import com.expensetracker.entity.AuditLog.Action;
+import com.expensetracker.entity.Company;
 import com.expensetracker.repository.AuditLogRepository;
+import com.expensetracker.repository.CompanyRepository;
+import com.expensetracker.security.TenantSecurityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -39,12 +42,17 @@ public class AuditLogService {
     private final AtomicLong idGenerator = new AtomicLong(System.currentTimeMillis());
 
     private final AuditLogRepository repo;
+    private final CompanyRepository companyRepo;
     private final ObjectMapper mapper;
 
     /**
      * REQUIRES_NEW so the audit row commits independently of the caller's
      * transaction — if the business txn rolls back, we still know an attempt
      * was made.
+     *
+     * Tenant stamping: the company is read from {@link TenantSecurityService}
+     * so callers don't have to remember to pass it. SUPER_ADMIN actions (no
+     * tenant context) get a null company_id, which the schema allows.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void log(AdminUser actor,
@@ -54,8 +62,12 @@ public class AuditLogService {
                     Object oldValue,
                     Object newValue) {
 
+        Long companyId = TenantSecurityService.currentCompanyIdOrNull();
+        Company company = companyId == null ? null : companyRepo.findById(companyId).orElse(null);
+
         AuditLog entry = AuditLog.builder()
                 .user(actor)
+                .company(company)
                 .action(action)
                 .entityType(entityType)
                 .entityId(entityId)
@@ -72,17 +84,9 @@ public class AuditLogService {
 
     @Transactional(readOnly = true)
     public Page<AuditLogResponse> list(String entityType, Long userId, Pageable pageable) {
-        Page<AuditLog> page;
-        if (entityType != null && userId != null) {
-            page = repo.findByEntityTypeAndUserIdOrderByCreatedAtDesc(entityType, userId, pageable);
-        } else if (entityType != null) {
-            page = repo.findByEntityTypeOrderByCreatedAtDesc(entityType, pageable);
-        } else if (userId != null) {
-            page = repo.findByUserIdOrderByCreatedAtDesc(userId, pageable);
-        } else {
-            page = repo.findAllByOrderByCreatedAtDesc(pageable);
-        }
-        return page.map(AuditLogResponse::from);
+        Long companyId = TenantSecurityService.currentCompanyIdOrNull();
+        return repo.search(entityType, userId, companyId, pageable)
+                .map(AuditLogResponse::from);
     }
 
     private String toJson(Object value, AdminUser actor, String entityType, Long entityId, String which) {

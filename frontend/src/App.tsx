@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { ProtectedRoute } from './components/guards/ProtectedRoute';
 import { AdminRoute } from './components/guards/AdminRoute';
+import { SuperAdminRoute } from './components/guards/SuperAdminRoute';
 import { DashboardLayout } from './layouts/DashboardLayout';
 
 import { LoginPage } from './pages/LoginPage';
@@ -15,6 +16,7 @@ import { AuditLogPage } from './pages/AuditLogPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { CompaniesPage } from './pages/CompaniesPage';
 
 function App() {
   return (
@@ -36,6 +38,10 @@ function App() {
           <Route element={<AdminRoute />}>
             <Route path="users"     element={<UsersPage />} />
             <Route path="audit-log" element={<AuditLogPage />} />
+          </Route>
+
+          <Route element={<SuperAdminRoute />}>
+            <Route path="companies" element={<CompaniesPage />} />
           </Route>
         </Route>
       </Route>

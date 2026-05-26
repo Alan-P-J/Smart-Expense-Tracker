@@ -5,11 +5,15 @@ import com.expensetracker.dto.response.CategoryResponse;
 import com.expensetracker.entity.AdminUser;
 import com.expensetracker.entity.AuditLog.Action;
 import com.expensetracker.entity.Category;
+import com.expensetracker.entity.Company;
 import com.expensetracker.exception.ConflictException;
 import com.expensetracker.exception.ResourceNotFoundException;
 import com.expensetracker.repository.CategoryRepository;
+import com.expensetracker.repository.CompanyRepository;
 import com.expensetracker.security.SecurityUtils;
+import com.expensetracker.security.TenantSecurityService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,18 +28,25 @@ public class CategoryService {
     private static final String ENTITY_TYPE = "Category";
 
     private final CategoryRepository categoryRepo;
+    private final CompanyRepository companyRepo;
     private final AuditLogService auditLog;
 
     @Transactional(readOnly = true)
     public List<CategoryResponse> listAll() {
-        return categoryRepo.findAllByOrderByNameAsc().stream()
+        Long companyId = TenantSecurityService.currentCompanyIdOrNull();
+        return categoryRepo.findVisibleForCompany(companyId).stream()
                 .map(CategoryResponse::from)
                 .toList();
     }
 
     @Transactional
     public CategoryResponse create(CategoryRequest req) {
-        if (categoryRepo.existsByName(req.name())) {
+        Long companyId = TenantSecurityService.requireCompanyId();
+        Company company = companyRepo.findById(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Company", companyId));
+
+        // Collision with globals OR own customs is a 409.
+        if (categoryRepo.existsByNameForCompany(req.name(), companyId)) {
             throw new ConflictException("Category already exists: " + req.name());
         }
 
@@ -44,6 +55,7 @@ public class CategoryService {
                 .colourHex(req.colourHex())
                 .iconName(req.iconName())
                 .isDefault(false)   // only seeded categories are default
+                .company(company)
                 .build();
 
         Category saved = categoryRepo.save(category);
@@ -60,10 +72,24 @@ public class CategoryService {
         Category category = categoryRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ENTITY_TYPE, id));
 
+        // Globals (company=null) can only be edited by SUPER_ADMIN, because a
+        // tenant editing a global default would shift state for every other
+        // tenant. verifyOwnership treats null owner as cross-tenant so we
+        // need an explicit branch here.
+        if (category.getCompany() == null) {
+            ensureSuperAdmin();
+        } else {
+            TenantSecurityService.verifyOwnership(category.getCompany().getId(), ENTITY_TYPE, id);
+        }
+
         Map<String, Object> oldValue = snapshot(category);
 
-        // Name change must not collide with an existing category
-        if (!category.getName().equals(req.name()) && categoryRepo.existsByName(req.name())) {
+        // Name change must not collide with another category visible to this tenant.
+        Long companyId = category.getCompany() == null
+                ? null
+                : category.getCompany().getId();
+        if (!category.getName().equalsIgnoreCase(req.name())
+                && categoryRepo.existsByNameForCompanyExcluding(req.name(), id, companyId)) {
             throw new ConflictException("Category already exists: " + req.name());
         }
 
@@ -85,6 +111,12 @@ public class CategoryService {
         Category category = categoryRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ENTITY_TYPE, id));
 
+        if (category.getCompany() == null) {
+            ensureSuperAdmin();
+        } else {
+            TenantSecurityService.verifyOwnership(category.getCompany().getId(), ENTITY_TYPE, id);
+        }
+
         if (category.isDefault()) {
             throw new ConflictException("Default categories cannot be deleted");
         }
@@ -100,6 +132,12 @@ public class CategoryService {
                 oldValue, null);
     }
 
+    private void ensureSuperAdmin() {
+        if (!SecurityUtils.getCurrentUser().isSuperAdmin()) {
+            throw new AccessDeniedException("Global categories can only be modified by SUPER_ADMIN");
+        }
+    }
+
     private Map<String, Object> snapshot(Category c) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id",        c.getId());
@@ -107,6 +145,7 @@ public class CategoryService {
         m.put("colourHex", c.getColourHex());
         m.put("iconName",  c.getIconName());
         m.put("isDefault", c.isDefault());
+        m.put("companyId", c.getCompany() == null ? null : c.getCompany().getId());
         return m;
     }
 }

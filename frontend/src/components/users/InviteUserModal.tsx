@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Mail, Pencil, UserPlus, X } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Building2, Mail, Pencil, UserPlus, X } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 
 import { DEPARTMENTS, ROLE_DEFS, roleFromDisplay, type DisplayRole, type EnrichedUser } from './userTypes';
 import { userService } from '../../api/services/userService';
+import { companyService } from '../../api/services/companyService';
+import { useAuth } from '../../hooks/useAuth';
 
 interface InviteUserModalProps {
   open: boolean;
@@ -21,6 +23,9 @@ interface FormState {
   role: DisplayRole;
   department: string;
   requireMfa: boolean;
+  // SUPER_ADMIN only — which company to create the user inside. Ignored for
+  // company admins (their tenant is taken from TenantContext on the server).
+  companyId: number | null;
 }
 
 const FIELD_LABEL = 'text-[11px] font-semibold tracking-wider uppercase text-text-muted dark:text-[#94A3B8] mb-1.5';
@@ -39,10 +44,20 @@ function buildInitials(name: string): string {
 
 export function InviteUserModal({ open, editing, onClose }: InviteUserModalProps) {
   const queryClient = useQueryClient();
+  const { isSuperAdmin } = useAuth();
   const isEdit = editing != null;
 
+  // SUPER_ADMIN sees a company picker. Lazy-load only when the modal opens
+  // in create mode — no point fetching for company admins.
+  const companiesQuery = useQuery({
+    queryKey: ['companies'],
+    queryFn: companyService.list,
+    enabled: open && isSuperAdmin && !isEdit,
+    staleTime: 60_000,
+  });
+
   const [form, setForm] = useState<FormState>({
-    name: '', email: '', password: '', role: 'Viewer', department: DEPARTMENTS[0], requireMfa: true,
+    name: '', email: '', password: '', role: 'Viewer', department: DEPARTMENTS[0], requireMfa: true, companyId: null,
   });
 
   // Sync form to editing target when modal opens.
@@ -52,9 +67,10 @@ export function InviteUserModal({ open, editing, onClose }: InviteUserModalProps
       setForm({
         name: editing.name, email: editing.email, password: '',
         role: editing.role, department: editing.department, requireMfa: editing.mfa,
+        companyId: null,
       });
     } else {
-      setForm({ name: '', email: '', password: '', role: 'Viewer', department: DEPARTMENTS[0], requireMfa: true });
+      setForm({ name: '', email: '', password: '', role: 'Viewer', department: DEPARTMENTS[0], requireMfa: true, companyId: null });
     }
   }, [editing, open]);
 
@@ -73,13 +89,26 @@ export function InviteUserModal({ open, editing, onClose }: InviteUserModalProps
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['users'] });
 
   const createMutation = useMutation({
-    mutationFn: () =>
-      userService.createUser({
+    mutationFn: () => {
+      const payload = {
         email: form.email.trim(),
         password: form.password,
         fullName: form.name.trim(),
         role: roleFromDisplay(form.role),
-      }),
+      };
+      // SUPER_ADMIN: target a specific company via /api/companies/{id}/users.
+      // Company admins: /api/users — the backend stamps their own tenant.
+      if (isSuperAdmin) {
+        if (form.companyId == null) {
+          return Promise.reject(new Error('Pick a company before inviting'));
+        }
+        return companyService.addUser(form.companyId, {
+          ...payload,
+          role: payload.role as 'ADMIN' | 'VIEWER',
+        });
+      }
+      return userService.createUser(payload);
+    },
     onSuccess: () => {
       toast.success(`Invited ${form.name.trim()}`);
       invalidate();
@@ -112,7 +141,11 @@ export function InviteUserModal({ open, editing, onClose }: InviteUserModalProps
 
   const canSubmit = isEdit
     ? form.role !== editing!.role
-    : form.name.trim().length > 0 && form.email.trim().length > 0 && form.password.length >= 8;
+    : form.name.trim().length > 0
+        && form.email.trim().length > 0
+        && form.password.length >= 8
+        // Super admin must pick a company; company admin's tenant is implicit.
+        && (!isSuperAdmin || form.companyId != null);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,6 +238,40 @@ export function InviteUserModal({ open, editing, onClose }: InviteUserModalProps
                 : "We'll create the account with this email. They sign in with the password below."}
             </p>
           </div>
+
+          {/* Company picker — SUPER_ADMIN, create mode only. Company admins
+              don't see this; their tenant is taken from the JWT on the server. */}
+          {!isEdit && isSuperAdmin && (
+            <div>
+              <div className={FIELD_LABEL}>Company</div>
+              <div className="relative">
+                <Building2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-[#94A3B8]" aria-hidden="true" />
+                <select
+                  value={form.companyId == null ? '' : String(form.companyId)}
+                  onChange={(e) => setField('companyId', e.target.value === '' ? null : Number(e.target.value))}
+                  disabled={companiesQuery.isLoading}
+                  className={FIELD_INPUT + ' pl-9 appearance-none cursor-pointer'}
+                >
+                  <option value="">
+                    {companiesQuery.isLoading ? 'Loading companies…' : 'Select a company…'}
+                  </option>
+                  {(companiesQuery.data ?? [])
+                    .filter((c) => c.isActive)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                </select>
+              </div>
+              {companiesQuery.isError && (
+                <p className="text-[11.5px] text-danger mt-1.5">Couldn't load companies — try again.</p>
+              )}
+              {!companiesQuery.isError && (
+                <p className="text-[11.5px] text-text-muted dark:text-[#94A3B8] mt-1.5">
+                  The user is created inside this tenant and can't see other companies' data.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Password (create only) */}
           {!isEdit && (

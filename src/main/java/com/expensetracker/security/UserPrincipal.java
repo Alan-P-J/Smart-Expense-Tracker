@@ -25,6 +25,18 @@ public class UserPrincipal implements UserDetails {
 
     public Long getId() { return user.getId(); }
 
+    /**
+     * Tenant id of the authenticated user. {@code null} for SUPER_ADMIN —
+     * who isn't bound to a company.
+     */
+    public Long getCompanyId() {
+        return user.getCompany() == null ? null : user.getCompany().getId();
+    }
+
+    public boolean isSuperAdmin() {
+        return user.isSuperAdmin();
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Emit BOTH the ROLE_-prefixed authority (so hasRole('ADMIN') works) and the

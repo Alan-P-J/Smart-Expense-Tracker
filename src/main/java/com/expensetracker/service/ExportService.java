@@ -2,6 +2,7 @@ package com.expensetracker.service;
 
 import com.expensetracker.entity.Expense;
 import com.expensetracker.repository.ExpenseRepository;
+import com.expensetracker.security.TenantSecurityService;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -62,6 +63,10 @@ public class ExportService {
         response.setHeader("Content-Disposition",
                 "attachment; filename=\"" + csvFilename(from, to) + "\"");
 
+        // Snapshot tenant before the response stream starts — the streaming
+        // lambda runs after the request thread releases TenantContext.
+        final Long companyId = TenantSecurityService.currentCompanyIdOrNull();
+
         return outputStream -> {
             try (BufferedWriter w = new BufferedWriter(
                     new OutputStreamWriter(outputStream, StandardCharsets.UTF_8))) {
@@ -72,7 +77,7 @@ public class ExportService {
                 int pageNum = 0;
                 Page<CsvRow> page;
                 do {
-                    page = self.fetchCsvPage(pageNum, CSV_PAGE_SIZE, from, to);
+                    page = self.fetchCsvPage(pageNum, CSV_PAGE_SIZE, from, to, companyId);
                     for (CsvRow row : page.getContent()) {
                         w.write(row.toCsvLine());
                         w.newLine();
@@ -90,14 +95,13 @@ public class ExportService {
      * primitives + strings, so the streaming lambda never touches a JPA proxy.
      */
     @Transactional(readOnly = true)
-    public Page<CsvRow> fetchCsvPage(int pageNum, int pageSize, LocalDate from, LocalDate to) {
+    public Page<CsvRow> fetchCsvPage(int pageNum, int pageSize, LocalDate from, LocalDate to,
+                                     Long companyId) {
         Sort sort = Sort.by(Sort.Direction.DESC, "expenseDate")
                 .and(Sort.by(Sort.Direction.DESC, "createdAt"));
         PageRequest pageReq = PageRequest.of(pageNum, pageSize, sort);
-        if (from == null && to == null) {
-            return expenseRepo.findAll(pageReq).map(CsvRow::from);
-        }
-        return expenseRepo.findAll(ExpenseDateRangeSpec.between(from, to), pageReq)
+        return expenseRepo
+                .findAll(ExpenseExportSpec.forCompanyBetween(companyId, from, to), pageReq)
                 .map(CsvRow::from);
     }
 
@@ -121,7 +125,8 @@ public class ExportService {
         LocalDate today = LocalDate.now();
         LocalDate start = from != null ? from : today.withDayOfMonth(1);
         LocalDate end = to != null ? to : today;
-        PdfData data = self.loadPdfData(start, end);
+        Long companyId = TenantSecurityService.currentCompanyIdOrNull();
+        PdfData data = self.loadPdfData(start, end, companyId);
         String periodLabel = pdfPeriodLabel(start, end);
 
         return outputStream -> {
@@ -166,9 +171,9 @@ public class ExportService {
     }
 
     @Transactional(readOnly = true)
-    public PdfData loadPdfData(LocalDate start, LocalDate end) {
+    public PdfData loadPdfData(LocalDate start, LocalDate end, Long companyId) {
         List<Expense> expenses = expenseRepo
-                .findAll(ExpenseDateRangeSpec.between(start, end),
+                .findAll(ExpenseExportSpec.forCompanyBetween(companyId, start, end),
                         Sort.by(Sort.Direction.DESC, "expenseDate"));
 
         BigDecimal total = BigDecimal.ZERO;
@@ -263,22 +268,26 @@ public class ExportService {
 
     public record PdfData(List<PdfRow> rows, BigDecimal totalAmount, String topCategory) {}
 
-    /** Self-contained date-range spec — avoids pulling in ExpenseSpecification.
-     *  Both bounds are optional so callers can do "from only", "to only", or full range. */
-    private static final class ExpenseDateRangeSpec {
-        static org.springframework.data.jpa.domain.Specification<Expense> between(
-                LocalDate start, LocalDate end) {
+    /** Self-contained spec for exports: tenant scope + optional date range.
+     *  Null companyId = no tenant filter (SUPER_ADMIN). Both date bounds are
+     *  optional so callers can do "from only", "to only", or full range. */
+    private static final class ExpenseExportSpec {
+        static org.springframework.data.jpa.domain.Specification<Expense> forCompanyBetween(
+                Long companyId, LocalDate start, LocalDate end) {
             return (root, q, cb) -> {
-                if (start != null && end != null) {
-                    return cb.between(root.get("expenseDate"), start, end);
+                java.util.List<jakarta.persistence.criteria.Predicate> ps = new java.util.ArrayList<>();
+                if (companyId != null) {
+                    ps.add(cb.equal(root.get("company").get("id"), companyId));
                 }
                 if (start != null) {
-                    return cb.greaterThanOrEqualTo(root.get("expenseDate"), start);
+                    ps.add(cb.greaterThanOrEqualTo(root.get("expenseDate"), start));
                 }
                 if (end != null) {
-                    return cb.lessThanOrEqualTo(root.get("expenseDate"), end);
+                    ps.add(cb.lessThanOrEqualTo(root.get("expenseDate"), end));
                 }
-                return cb.conjunction();
+                return ps.isEmpty()
+                        ? cb.conjunction()
+                        : cb.and(ps.toArray(new jakarta.persistence.criteria.Predicate[0]));
             };
         }
     }

@@ -43,6 +43,12 @@ public class Expense {
     @JoinColumn(name = "created_by", nullable = false)
     private AdminUser createdBy;
 
+    // Tenant owner — every expense belongs to exactly one company. Stamped by
+    // ExpenseService from TenantContext, never from the request body.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false,
             columnDefinition = "TIMESTAMPTZ")

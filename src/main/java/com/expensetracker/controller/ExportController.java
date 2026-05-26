@@ -34,7 +34,7 @@ public class ExportController {
     }
 
     @GetMapping("/pdf")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER_ADMIN')")
     @Operation(summary = "Stream a PDF report — defaults to current month when no range is provided (admin only)")
     public ResponseEntity<StreamingResponseBody> pdf(
             HttpServletResponse response,

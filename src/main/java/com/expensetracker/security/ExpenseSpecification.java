@@ -9,21 +9,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Dynamic filter for {@code GET /api/expenses}. Each parameter is optional —
- * nulls / blanks contribute no predicate so the caller can mix and match
- * (category + date range + search) freely.
+ * Dynamic filter for {@code GET /api/expenses}. Tenant scoping is applied
+ * unconditionally — services pass {@code companyId} from {@link TenantContext}
+ * and only super admins (who provide {@code null}) see across companies.
+ *
+ * The other parameters are optional — nulls / blanks contribute no predicate
+ * so the caller can mix and match (category + date range + search) freely.
  */
 public final class ExpenseSpecification {
 
     private ExpenseSpecification() {}
 
-    public static Specification<Expense> filter(Long categoryId,
+    public static Specification<Expense> filter(Long companyId,
+                                                Long categoryId,
                                                 LocalDate startDate,
                                                 LocalDate endDate,
                                                 String search) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            // Tenant scope. Null means SUPER_ADMIN — no filter applied.
+            if (companyId != null) {
+                predicates.add(cb.equal(root.get("company").get("id"), companyId));
+            }
             if (categoryId != null) {
                 predicates.add(cb.equal(root.get("category").get("id"), categoryId));
             }

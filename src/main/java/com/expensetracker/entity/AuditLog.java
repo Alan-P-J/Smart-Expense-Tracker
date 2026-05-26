@@ -27,6 +27,13 @@ public class AuditLog {
     @JoinColumn(name = "user_id", nullable = false)
     private AdminUser user;
 
+    // Nullable: SUPER_ADMIN actions on the companies table itself have no
+    // owning tenant. For everything else the service stamps this from
+    // TenantContext.
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "company_id")
+    private Company company;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Action action;

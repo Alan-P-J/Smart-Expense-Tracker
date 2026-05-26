@@ -16,6 +16,8 @@ public interface AdminUserRepository extends JpaRepository<AdminUser, Long> {
 
     boolean existsByEmail(String email);
 
+    java.util.List<AdminUser> findAllByCompanyId(Long companyId);
+
     @Modifying
     @Query("UPDATE AdminUser u SET u.lastLoginAt = :time WHERE u.id = :id")
     void updateLastLoginAt(Long id, OffsetDateTime time);

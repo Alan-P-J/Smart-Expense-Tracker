@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import {
   BarChart3,
+  Building2,
   ClipboardList,
   LayoutDashboard,
   PieChart,
@@ -18,6 +19,7 @@ interface NavItem {
   label: string;
   icon: LucideIcon;
   adminOnly?: boolean;
+  superAdminOnly?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -28,6 +30,7 @@ const NAV: NavItem[] = [
   { to: '/reports',    label: 'Reports',    icon: BarChart3 },
   { to: '/users',      label: 'Users',      icon: Users,         adminOnly: true },
   { to: '/audit-log',  label: 'Audit Log',  icon: ClipboardList, adminOnly: true },
+  { to: '/companies',  label: 'Companies',  icon: Building2,     superAdminOnly: true },
 ];
 
 function Logo({ collapsed }: { collapsed: boolean }) {
@@ -66,13 +69,47 @@ interface SidebarBodyProps {
   onItemClick?: () => void;
 }
 
+function TenantBadge({ collapsed }: { collapsed: boolean }) {
+  const { isSuperAdmin, companyName } = useAuth();
+  if (collapsed) return null;     // pill is text-driven; nothing to show collapsed
+
+  if (isSuperAdmin) {
+    return (
+      <div className="px-6 pt-3">
+        <span
+          className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
+          title="You can manage every company"
+        >
+          Super Admin
+        </span>
+      </div>
+    );
+  }
+  if (!companyName) return null;
+  return (
+    <div className="px-6 pt-3">
+      <span
+        className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-accent-soft text-accent max-w-full truncate"
+        title={companyName}
+      >
+        {companyName}
+      </span>
+    </div>
+  );
+}
+
 function SidebarBody({ collapsed, onItemClick }: SidebarBodyProps) {
-  const { isAdmin } = useAuth();
-  const items = NAV.filter((n) => !n.adminOnly || isAdmin);
+  const { isAdmin, isSuperAdmin } = useAuth();
+  const items = NAV.filter((n) => {
+    if (n.superAdminOnly) return isSuperAdmin;
+    if (n.adminOnly) return isAdmin;
+    return true;
+  });
 
   return (
     <>
       <Logo collapsed={collapsed} />
+      <TenantBadge collapsed={collapsed} />
 
       {/* Nav — intentionally NO flex-1 so items sit naturally under the logo
           and the rest of the sidebar stays empty, per design spec. */}

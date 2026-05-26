@@ -5,6 +5,7 @@ import com.expensetracker.dto.response.RecentExpenseResponse;
 import com.expensetracker.dto.response.ReportSummaryResponse;
 import com.expensetracker.entity.Expense;
 import com.expensetracker.repository.ExpenseRepository;
+import com.expensetracker.security.TenantSecurityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,11 +37,12 @@ public class ReportsService {
     };
 
     public ReportSummaryResponse getSummary(LocalDate from, LocalDate to) {
-        BigDecimal totalAmount = expenseRepo.sumAmountBetween(from, to);
-        if (totalAmount == null) totalAmount = BigDecimal.ZERO;
-        long totalCount = expenseRepo.countBetween(from, to);
+        Long companyId = TenantSecurityService.currentCompanyIdOrNull();
 
-        // Days in window (inclusive). At least 1 to avoid divide-by-zero.
+        BigDecimal totalAmount = expenseRepo.sumAmountBetween(from, to, companyId);
+        if (totalAmount == null) totalAmount = BigDecimal.ZERO;
+        long totalCount = expenseRepo.countBetween(from, to, companyId);
+
         long days = Math.max(ChronoUnit.DAYS.between(from, to) + 1, 1);
         BigDecimal avgPerDay = totalAmount.divide(
                 BigDecimal.valueOf(days), 2, RoundingMode.HALF_UP);
@@ -49,17 +51,15 @@ public class ReportsService {
                 : totalAmount.divide(BigDecimal.valueOf(totalCount), 2, RoundingMode.HALF_UP);
 
         RecentExpenseResponse largest = expenseRepo
-                .findTopByAmountBetween(from, to, PageRequest.of(0, 1))
+                .findTopByAmountBetween(from, to, companyId, PageRequest.of(0, 1))
                 .stream()
                 .findFirst()
                 .map(RecentExpenseResponse::from)
                 .orElse(null);
 
-        // Most active day = weekday with the highest expense count (not amount).
-        // Day-of-week stats sort by ISODOW (Mon..Sun) but here we pick the max-count row.
         String mostActiveDay = null;
         long bestCount = -1;
-        for (Object[] row : expenseRepo.dayOfWeekStatsBetween(from, to)) {
+        for (Object[] row : dayOfWeekRows(from, to, companyId)) {
             int idx = ((Number) row[0]).intValue();
             long count = ((Number) row[2]).longValue();
             if (count > bestCount && idx >= 1 && idx <= 7) {
@@ -79,9 +79,10 @@ public class ReportsService {
     }
 
     public List<DayOfWeekSpendResponse> getDayOfWeek(LocalDate from, LocalDate to) {
-        // Backfill missing weekdays with zero so the chart always has 7 bars.
+        Long companyId = TenantSecurityService.currentCompanyIdOrNull();
+
         Map<Integer, Object[]> byIdx = new HashMap<>();
-        for (Object[] row : expenseRepo.dayOfWeekStatsBetween(from, to)) {
+        for (Object[] row : dayOfWeekRows(from, to, companyId)) {
             byIdx.put(((Number) row[0]).intValue(), row);
         }
         List<DayOfWeekSpendResponse> out = new ArrayList<>(7);
@@ -94,11 +95,22 @@ public class ReportsService {
         return out;
     }
 
+    /**
+     * Branch on tenant: null companyId (SUPER_ADMIN) uses the unscoped
+     * variant; everyone else uses the company-scoped one. Avoids a nullable
+     * native parameter, which Hibernate + PG handle badly.
+     */
+    private List<Object[]> dayOfWeekRows(LocalDate from, LocalDate to, Long companyId) {
+        return companyId == null
+                ? expenseRepo.dayOfWeekStatsAll(from, to)
+                : expenseRepo.dayOfWeekStatsForCompany(from, to, companyId);
+    }
+
     public List<RecentExpenseResponse> getTopExpenses(LocalDate from, LocalDate to, int limit) {
-        // Clamp the limit so a hostile caller can't ask for the whole table.
+        Long companyId = TenantSecurityService.currentCompanyIdOrNull();
         int safeLimit = Math.max(1, Math.min(limit, 100));
         Pageable page = PageRequest.of(0, safeLimit);
-        List<Expense> top = expenseRepo.findTopByAmountBetween(from, to, page);
+        List<Expense> top = expenseRepo.findTopByAmountBetween(from, to, companyId, page);
         return top.stream().map(RecentExpenseResponse::from).toList();
     }
 }

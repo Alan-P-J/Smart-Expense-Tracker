@@ -20,7 +20,12 @@ export interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   role: Role | null;
+  /** True for SUPER_ADMIN or ADMIN — anyone with write access. */
   isAdmin: boolean;
+  /** True only for SUPER_ADMIN. Gates company-management UI. */
+  isSuperAdmin: boolean;
+  companyId: number | null;
+  companyName: string | null;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -69,7 +74,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       login,
       logout,
       role: user?.role ?? null,
-      isAdmin: user?.role === 'ADMIN',
+      isAdmin: user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN',
+      isSuperAdmin: user?.isSuperAdmin ?? false,
+      companyId: user?.companyId ?? null,
+      companyName: user?.companyName ?? null,
     }),
     [user, isLoading, login, logout],
   );

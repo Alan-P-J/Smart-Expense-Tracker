@@ -45,7 +45,19 @@ public class AdminUser {
     @Column(name = "last_login_at", columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime lastLoginAt;
 
+    // Nullable: SUPER_ADMIN belongs to no single company. EAGER because
+    // JwtAuthenticationFilter loads UserPrincipal once per request and then
+    // TenantFilter reads company.id outside the JPA session.
+    @ManyToOne(fetch = FetchType.EAGER, optional = true)
+    @JoinColumn(name = "company_id")
+    private Company company;
+
+    @Column(name = "is_super_admin", nullable = false)
+    @Builder.Default
+    private boolean isSuperAdmin = false;
+
     public enum Role {
-        ADMIN, VIEWER
+        // ADMIN is the company-scoped admin (the spec's COMPANY_ADMIN).
+        SUPER_ADMIN, ADMIN, VIEWER
     }
 }

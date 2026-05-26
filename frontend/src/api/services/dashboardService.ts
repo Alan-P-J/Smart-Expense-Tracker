@@ -13,8 +13,10 @@ export interface DateRangeParams {
 }
 
 export const dashboardService = {
-  getSummary: () =>
-    axiosClient.get<DashboardSummaryResponse>('/dashboard/summary').then((r) => r.data),
+  getSummary: (params: DateRangeParams = {}) =>
+    axiosClient
+      .get<DashboardSummaryResponse>('/dashboard/summary', { params })
+      .then((r) => r.data),
 
   getTrends: (params: DateRangeParams = {}) =>
     axiosClient

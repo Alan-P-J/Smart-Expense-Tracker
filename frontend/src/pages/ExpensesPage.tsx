@@ -74,13 +74,26 @@ export function ExpensesPage() {
   const [drawerRow, setDrawerRow] = useState<EnrichedExpense | null>(null);
   const [exporting, setExporting] = useState<'csv' | 'pdf' | null>(null);
 
-  // Open form when navigated here from the topbar quick-add (?new=1).
+  // Two URL handoffs from the topbar:
+  //   ?new=1            — open the Add Expense form (admin only)
+  //   ?search=<term>    — seed the search filter (header search)
+  // Both params are consumed once then stripped from the URL.
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
+    let mutated = false;
     if (searchParams.get('new') === '1' && isAdmin) {
       setEditing(null);
       setFormOpen(true);
       searchParams.delete('new');
+      mutated = true;
+    }
+    const term = searchParams.get('search');
+    if (term) {
+      setFilters((f) => ({ ...f, search: term }));
+      searchParams.delete('search');
+      mutated = true;
+    }
+    if (mutated) {
       setSearchParams(searchParams, { replace: true });
     }
   }, [searchParams, setSearchParams, isAdmin]);

@@ -4,7 +4,9 @@
 // as a plain string by default with default-property-inclusion: non_null).
 // ────────────────────────────────────────────────────────────
 
-export type Role = 'ADMIN' | 'VIEWER';
+// ADMIN is the company-scoped admin (the "COMPANY_ADMIN" in the spec).
+// SUPER_ADMIN spans every company and manages /companies.
+export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'VIEWER';
 
 // ─── Auth ───────────────────────────────────────────────────
 export interface AuthResponse {
@@ -12,6 +14,9 @@ export interface AuthResponse {
   email: string;
   fullName: string;
   role: Role;
+  companyId: number | null;       // null for SUPER_ADMIN
+  companyName: string | null;
+  isSuperAdmin: boolean;
 }
 
 export interface LoginRequest {
@@ -31,6 +36,9 @@ export interface UserResponse {
   fullName: string;
   role: Role;
   isActive: boolean;
+  isSuperAdmin: boolean;
+  companyId: number | null;
+  companyName: string | null;
   createdAt: string; // ISO OffsetDateTime
 }
 
@@ -39,6 +47,40 @@ export interface CreateUserRequest {
   password: string;
   fullName: string;
   role?: Role;
+}
+
+// ─── Companies (SUPER_ADMIN only) ──────────────────────────
+export interface CompanyResponse {
+  id: number;
+  name: string;
+  slug: string;
+  logoUrl?: string | null;
+  isActive: boolean;
+  userCount: number;
+  createdAt: string;
+}
+
+export interface CompanyStatsResponse {
+  companyId: number;
+  name: string;
+  slug: string;
+  isActive: boolean;
+  userCount: number;
+  expenseCount: number;
+  totalAmountThisMonth: string;
+}
+
+export interface CreateCompanyRequest {
+  name: string;
+  slug: string;       // lowercase, digits, hyphens
+  logoUrl?: string;
+}
+
+export interface CreateCompanyUserRequest {
+  email: string;
+  password: string;
+  fullName: string;
+  role: 'ADMIN' | 'VIEWER';
 }
 
 // ─── Categories ─────────────────────────────────────────────

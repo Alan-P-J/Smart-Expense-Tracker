@@ -1,6 +1,7 @@
 package com.expensetracker.config;
 
 import com.expensetracker.security.JwtAuthenticationFilter;
+import com.expensetracker.security.TenantFilter;
 import com.expensetracker.security.UserDetailsServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -42,6 +43,7 @@ import java.util.Map;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
+    private final TenantFilter tenantFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
     @Bean
@@ -72,7 +74,9 @@ public class SecurityConfig {
                 .accessDeniedHandler((req, res, e) -> writeJsonError(res, mapper, 403, "Forbidden", e.getMessage()))
             )
             .authenticationProvider(daoAuthenticationProvider())
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            // Tenant filter MUST run after JWT so the principal is populated.
+            .addFilterAfter(tenantFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

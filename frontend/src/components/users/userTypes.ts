@@ -75,7 +75,9 @@ export interface EnrichedUser {
 }
 
 export function roleToDisplay(role: Role): DisplayRole {
-  return role === 'ADMIN' ? 'Admin' : 'Viewer';
+  // SUPER_ADMIN folds into "Admin" for the users-page badge — the dedicated
+  // "Super Admin" pill in the sidebar already differentiates them.
+  return role === 'ADMIN' || role === 'SUPER_ADMIN' ? 'Admin' : 'Viewer';
 }
 
 export function roleFromDisplay(role: DisplayRole): Role {

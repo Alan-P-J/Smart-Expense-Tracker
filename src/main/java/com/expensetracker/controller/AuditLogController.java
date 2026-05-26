@@ -27,7 +27,7 @@ public class AuditLogController {
     private final AuditLogService service;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     @Operation(summary = "List audit log entries, filtered by entityType and/or userId.")
     public ResponseEntity<Page<AuditLogResponse>> list(
             @RequestParam(required = false) String entityType,
