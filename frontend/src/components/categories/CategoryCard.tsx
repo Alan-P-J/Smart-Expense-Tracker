@@ -1,6 +1,5 @@
 import { ArrowDown, ArrowRight, ArrowUp, Pencil, Trash2 } from 'lucide-react';
 
-import { Sparkline } from '../ui/Sparkline';
 import { formatCurrency } from '../../lib/format';
 import { getCategoryIcon } from '../../utils/categoryIconMap';
 import type { CategoryResponse } from '../../types';
@@ -11,7 +10,6 @@ export interface CategoryView {
   budget: number;
   count: number;
   delta: number;
-  trend: number[];
   lastUsed?: string | null;
 }
 
@@ -25,7 +23,7 @@ interface CategoryCardProps {
 }
 
 export function CategoryCard({ view, isAdmin, onEdit, onDelete, onSelect, selected }: CategoryCardProps) {
-  const { category: cat, spent, budget, count, delta, trend, lastUsed } = view;
+  const { category: cat, spent, budget, count, delta, lastUsed } = view;
   const Icon = getCategoryIcon(cat.iconName);
   const pct = budget > 0 ? Math.round((spent / budget) * 100) : 0;
   const overBudget = budget > 0 && spent > budget;
@@ -103,7 +101,7 @@ export function CategoryCard({ view, isAdmin, onEdit, onDelete, onSelect, select
         </span>
       </div>
 
-      {/* Spent + sparkline + delta */}
+      {/* Spent + delta (sparkline removed — was synthetic). */}
       <div className="flex items-end justify-between mb-3.5">
         <div className="min-w-0">
           <div className="text-[19px] font-bold text-text-primary dark:text-[#F5F7FF] tnum tracking-tight">
@@ -115,20 +113,17 @@ export function CategoryCard({ view, isAdmin, onEdit, onDelete, onSelect, select
             <span className="tnum">{count} txns</span>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          <Sparkline data={trend} color={color} />
-          {delta !== 0 && (
-            <span
-              className={
-                'text-[11px] font-semibold tnum inline-flex items-center gap-0.5 ' +
-                (delta > 0 ? 'text-success' : 'text-warning')
-              }
-            >
-              {delta > 0 ? <ArrowUp size={10} aria-hidden="true" /> : <ArrowDown size={10} aria-hidden="true" />}
-              {Math.abs(delta).toFixed(1)}%
-            </span>
-          )}
-        </div>
+        {delta !== 0 && (
+          <span
+            className={
+              'text-[11px] font-semibold tnum inline-flex items-center gap-0.5 shrink-0 ' +
+              (delta > 0 ? 'text-success' : 'text-warning')
+            }
+          >
+            {delta > 0 ? <ArrowUp size={10} aria-hidden="true" /> : <ArrowDown size={10} aria-hidden="true" />}
+            {Math.abs(delta).toFixed(1)}%
+          </span>
+        )}
       </div>
 
       {/* Budget bar */}

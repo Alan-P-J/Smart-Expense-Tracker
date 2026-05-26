@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { AlertCircle, PieChart, Plus, Settings } from 'lucide-react';
+import { AlertCircle, PieChart, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { budgetService } from '../api/services/budgetService';
@@ -165,12 +165,6 @@ export function BudgetsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button
-            type="button"
-            className="h-10 px-3 sm:px-3.5 rounded-lg border border-border-strong dark:border-[#2D3956] bg-white dark:bg-[#1A233A] text-text-muted dark:text-[#94A3B8] hover:text-text-primary dark:hover:text-[#F5F7FF] transition inline-flex items-center gap-1.5 sm:gap-2 text-[12.5px] sm:text-[13px]"
-          >
-            <Settings size={15} aria-hidden="true" /> <span className="hidden sm:inline">Settings</span>
-          </button>
           {isAdmin && (
             <button
               type="button"

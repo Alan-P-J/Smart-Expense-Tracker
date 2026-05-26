@@ -102,14 +102,24 @@ export function BudgetForm({
     }
   }, [isOpen, initialData, reset]);
 
-  // ADD mode shows only categories without a budget; EDIT pins the current one.
+  // ADD mode shows EVERY category but disables the ones that already have a
+  // budget — keeps the user oriented (no silently vanishing options) while
+  // still preventing duplicate budgets (the (category_id, company_id) UNIQUE
+  // would reject it server-side anyway). EDIT pins the current category.
   const selectableCategories = useMemo(() => {
     if (isEditMode && initialData) {
       const current = categories.find((c) => c.id === initialData.categoryId);
       return current ? [current] : [];
     }
-    return categories.filter((c) => !budgetedCategoryIds.has(c.id));
-  }, [categories, budgetedCategoryIds, isEditMode, initialData]);
+    return categories;
+  }, [categories, isEditMode, initialData]);
+
+  // True when every visible category is already budgeted — the form is then
+  // effectively read-only in ADD mode; show the hint below.
+  const allCategoriesBudgeted = useMemo(
+    () => !isEditMode && categories.length > 0 && categories.every((c) => budgetedCategoryIds.has(c.id)),
+    [categories, budgetedCategoryIds, isEditMode],
+  );
 
   const mutation = useMutation({
     mutationFn: (values: BudgetFormValues) => {
@@ -230,11 +240,16 @@ export function BudgetForm({
               {...register('categoryId', { valueAsNumber: true })}
             >
               {!isEditMode && <option value={0}>Select a category…</option>}
-              {selectableCategories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
+              {selectableCategories.map((c) => {
+                const alreadyBudgeted = !isEditMode && budgetedCategoryIds.has(c.id);
+                return (
+                  <option key={c.id} value={c.id} disabled={alreadyBudgeted}>
+                    {c.name}{alreadyBudgeted ? ' (already budgeted)' : ''}
+                  </option>
+                );
+              })}
             </select>
-            {!isEditMode && selectableCategories.length === 0 && (
+            {allCategoriesBudgeted && (
               <p className="text-xs text-text-muted dark:text-[#94A3B8] mt-1">
                 Every category already has a budget — edit one instead.
               </p>

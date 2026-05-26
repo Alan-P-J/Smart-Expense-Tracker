@@ -41,12 +41,25 @@ public class CategoryService {
 
     @Transactional
     public CategoryResponse create(CategoryRequest req) {
-        Long companyId = TenantSecurityService.requireCompanyId();
-        Company company = companyRepo.findById(companyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Company", companyId));
+        AdminUser actor = SecurityUtils.getCurrentUser();
 
-        // Collision with globals OR own customs is a 409.
-        if (categoryRepo.existsByNameForCompany(req.name(), companyId)) {
+        // SUPER_ADMIN creates a GLOBAL category (company_id = NULL, visible to
+        // every tenant — same semantic as the seeded defaults). Company admins
+        // create a tenant-scoped category that only their company sees.
+        Company company;
+        Long collisionScope;   // companyId used to check name collisions
+        if (actor.isSuperAdmin()) {
+            company = null;
+            collisionScope = null;     // null → existsByNameForCompany checks globals only
+        } else {
+            Long companyId = TenantSecurityService.requireCompanyId();
+            company = companyRepo.findById(companyId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Company", companyId));
+            collisionScope = companyId;
+        }
+
+        // Collision check: super admin → among globals; company admin → globals + own customs.
+        if (categoryRepo.existsByNameForCompany(req.name(), collisionScope)) {
             throw new ConflictException("Category already exists: " + req.name());
         }
 
@@ -60,7 +73,6 @@ public class CategoryService {
 
         Category saved = categoryRepo.save(category);
 
-        AdminUser actor = SecurityUtils.getCurrentUser();
         auditLog.log(actor, Action.CREATE, ENTITY_TYPE, saved.getId(),
                 null, snapshot(saved));
 

@@ -14,7 +14,6 @@ import { CategoryCard, type CategoryView } from '../components/categories/Catego
 import { CategoryListRow, CATEGORY_LIST_COLS } from '../components/categories/CategoryListRow';
 import { CategoryDrawer } from '../components/categories/CategoryDrawer';
 import { CategoriesStats } from '../components/categories/CategoriesStats';
-import { seriesFor } from '../components/ui/Sparkline';
 
 import { categoryService } from '../api/services/categoryService';
 import { budgetService } from '../api/services/budgetService';
@@ -72,7 +71,9 @@ export function CategoriesPage() {
   });
 
   // Build a view-model per category: merge spent (from dashboard) + budget (from budgets).
-  // Trend & delta are visual mocks — the backend doesn't track per-category weekly spend yet.
+  // `delta` (MoM %) is a deterministic visual mock — backend doesn't expose
+  // per-category month-over-month yet. The sparkline that used to live here
+  // was removed because it was synthetic.
   const views: CategoryView[] = useMemo(() => {
     if (!categories) return [];
     const spentByCat = new Map<number, number>();
@@ -83,17 +84,14 @@ export function CategoriesPage() {
     return categories.map((cat) => {
       const spent = spentByCat.get(cat.id) ?? 0;
       const budget = budgetByCat.get(cat.id) ?? 0;
-      // Deterministic visual delta from the id so it stays stable across renders.
       const seed = (cat.id * 13) % 60;
       const delta = spent > 0 ? Number((seed - 30).toFixed(1)) / 2 : 0;
-      const trend = seriesFor(Math.max(spent / 7, 50), 0.2, 7);
       return {
         category: cat,
         spent,
         budget,
         count: 0,
         delta,
-        trend,
         lastUsed: spent > 0 ? 'this month' : null,
       };
     });

@@ -35,22 +35,12 @@ export function CategoryDrawer({ view, isAdmin, onClose, onEdit }: CategoryDrawe
   }, [view, onClose]);
 
   if (!view) return null;
-  const { category: cat, spent, budget, count, delta, trend, lastUsed } = view;
+  const { category: cat, spent, budget, count, delta, lastUsed } = view;
   const Icon = getCategoryIcon(cat.iconName);
   const pct = budget > 0 ? Math.round((spent / budget) * 100) : 0;
   const overBudget = budget > 0 && spent > budget;
   const color = cat.colourHex || '#5B5CF0';
   const barColor = overBudget ? '#EF4444' : pct > 80 ? '#F59E0B' : color;
-
-  // 7-point trend chart
-  const w = 240;
-  const h = 70;
-  const safeTrend = trend.length > 1 ? trend : [0, 0];
-  const min = Math.min(...safeTrend);
-  const max = Math.max(...safeTrend);
-  const range = max - min || 1;
-  const step = w / (safeTrend.length - 1);
-  const pts = safeTrend.map((v, i) => `${i * step},${h - ((v - min) / range) * h * 0.85 - 5}`).join(' ');
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
@@ -152,27 +142,6 @@ export function CategoryDrawer({ view, isAdmin, onClose, onEdit }: CategoryDrawe
                 </span>
               }
             />
-          </div>
-
-          <div>
-            <div className="text-[11px] font-semibold tracking-wider uppercase text-text-muted dark:text-[#94A3B8] mb-2">
-              7-week trend
-            </div>
-            <div className="rounded-xl bg-surface-muted dark:bg-[#121B32] border border-border dark:border-[#1F2A44] p-4 flex justify-center">
-              <svg width="100%" height="70" viewBox="0 0 240 70" preserveAspectRatio="none" aria-hidden="true">
-                <defs>
-                  <linearGradient id="cat-trend-grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={color} stopOpacity="0.4" />
-                    <stop offset="100%" stopColor={color} stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <polyline points={`0,${h} ${pts} ${w},${h}`} fill="url(#cat-trend-grad)" stroke="none" />
-                <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                {safeTrend.map((v, i) => (
-                  <circle key={i} cx={i * step} cy={h - ((v - min) / range) * h * 0.85 - 5} r="3" fill={color} stroke="var(--c-dot-stroke)" strokeWidth="2" />
-                ))}
-              </svg>
-            </div>
           </div>
 
           <div className="flex gap-2 pt-1">

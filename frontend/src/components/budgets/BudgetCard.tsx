@@ -1,6 +1,5 @@
 import { AlertCircle, AlertTriangle, Pencil } from 'lucide-react';
 
-import { Sparkline, seriesFor } from '../ui/Sparkline';
 import { formatCurrency } from '../../lib/format';
 import { getCategoryIcon } from '../../utils/categoryIconMap';
 import type { BudgetResponse } from '../../types';
@@ -44,9 +43,6 @@ export function BudgetCard({ budget, categoryIconName, isAdmin, onEdit, onSelect
   const dailyAvg = Math.round(spent / elapsed);
   const projected = Math.round(dailyAvg * MONTH_DAYS);
   const offTrack = projected > limit;
-
-  // Trend is a visual mock — backend doesn't track per-day budget series yet.
-  const trend = seriesFor(Math.max(spent / 7, 100), 0.25, 7);
 
   return (
     <div
@@ -163,11 +159,6 @@ export function BudgetCard({ budget, categoryIconName, isAdmin, onEdit, onSelect
         </div>
       </div>
 
-      {/* Sparkline */}
-      <div className="mt-3 flex items-center justify-between">
-        <span className="text-[11px] text-text-muted dark:text-[#94A3B8]">7-day trend</span>
-        <Sparkline data={trend} color={color} />
-      </div>
     </div>
   );
 }
