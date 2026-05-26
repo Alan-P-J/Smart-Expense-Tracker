@@ -1,35 +1,194 @@
 # ExpenseTrack
 
-A team expense tracker built around four hard requirements: **honest money math**
-(`BigDecimal` end-to-end, `toLocaleString('en-IN', { style: 'currency', currency: 'INR' })`),
-**safe-by-default auth** (JWT in HttpOnly cookies, BCrypt-hashed passwords, ADMIN/VIEWER
-role split, full audit log on every write), **real data** (no mock fallbacks — every
-dashboard tile and chart reads from a real endpoint), and **theme-aware UI** that ships
-both light and dark modes from day one.
+A modern multi-tenant expense tracking platform built with enterprise-grade security, real-time analytics, and a fully theme-aware UI.
 
-## Features
+The project was designed around four core principles:
 
-- **Dashboard** — KPI tiles with month-over-month deltas, expense trend chart, spending-by-category donut, recent expenses, budget alerts, audit-driven activity feed
-- **Expenses** — searchable + sortable table with filter bar, date-range picker, CSV/PDF export, create/edit modal
-- **Categories** — grid + list views, type filter, search, sort, icon picker, per-category budget progress
-- **Budgets** — monthly limits with progress ring, near-limit / over-budget alerts, projected end-of-month forecast
-- **Reports** — year/month filter, 6-metric summary strip, monthly bar chart, category donut, day-of-week chart (Mon–Sun), top-expenses ranked table
-- **Users** — admin-only user management, role/status filters, MFA-ready badges
-- **Audit log** — every CREATE/UPDATE/DELETE captured server-side, surfaced in the activity feed and a dedicated page
-- **Profile + Settings** — change-password form, theme toggle, session sign-out
-- **Custom UI primitives** — themed date picker, icon picker, period select, notification bell with real budget alerts
+* **Accurate financial calculations** — `BigDecimal` end-to-end with INR-safe formatting
+* **Secure-by-default authentication** — JWT in HttpOnly cookies, BCrypt password hashing, RBAC authorization, audit logging
+* **Real production-style architecture** — multi-tenant SaaS design, tenant isolation, no mock data fallbacks
+* **Modern UX** — responsive dashboard with light/dark themes from day one
 
-## Tech stack
+---
 
-**Backend** — Spring Boot 3.2.5 (Java 21) · Spring Security · Spring Data JPA · Hibernate 6 · PostgreSQL · Flyway 10.10.0 (override) · JWT (jjwt 0.12) · MapStruct · OpenAPI/Swagger UI · iText PDF · Lombok
+# 🚀 Features
 
-**Frontend** — React 18 · TypeScript 5 · Vite 5 · Tailwind CSS 3 (CSS-var theme tokens) · TanStack Query · React Hook Form + Zod · React Router 6 · Recharts · date-fns · axios · sonner · lucide-react
+## 📊 Dashboard
 
-## Architecture
+* KPI tiles with month-over-month deltas
+* Expense trend analytics
+* Spending-by-category donut chart
+* Recent expenses feed
+* Budget alerts
+* Audit-driven activity timeline
 
-- **Auth** — JWT access + refresh tokens, both stored in HttpOnly + Secure cookies; refresh rotation; revoke-all on password change
-- **Authorization** — `@PreAuthorize` on every mutating endpoint (`hasAuthority('ADMIN')` for writes, `isAuthenticated()` for reads)
-- **Audit** — AOP advice records every entity-level write to `audit_log` with the actor, action, entity ID and old/new JSON snapshots
-- **Money** — `BigDecimal` columns (`precision = 12, scale = 2`), serialized as strings to avoid float drift on the wire
-- **DB** — Postgres, Flyway-managed schema (V1 init, V2 seed); production runs `ddl-auto: validate` against migrations
-- **Theming** — CSS variables drive Tailwind utility colours, so `bg-card` / `text-accent` swap with one `<html class="dark">` toggle (persisted in `localStorage`, no flash on load)
+## 💰 Expenses
+
+* Searchable & sortable expense table
+* Advanced filter bar
+* Date-range picker
+* CSV/PDF export
+* Create/Edit expense modal
+
+## 🗂 Categories
+
+* Grid & list layouts
+* Search, sort & type filtering
+* Icon picker
+* Per-category budget tracking
+
+## 📈 Budgets
+
+* Monthly budget limits
+* Progress ring indicators
+* Near-limit & over-budget alerts
+* End-of-month spending forecast
+
+## 📑 Reports
+
+* Monthly & yearly analytics
+* 6-metric summary dashboard
+* Category spending insights
+* Day-of-week expense analysis
+* Top-expense ranking table
+
+## 👥 User Management
+
+* Admin-only user management
+* Role & status filters
+* MFA-ready user badges
+
+## 🏢 Multi-Tenant SaaS Architecture
+
+* Row-level tenant isolation
+* Shared database architecture
+* Tenant-aware backend filtering
+* Company-level access control
+* SUPER_ADMIN / COMPANY_ADMIN / VIEWER roles
+* Cross-tenant access protection
+
+## 🔒 Security & Audit
+
+* JWT access & refresh tokens
+* HttpOnly + Secure cookie authentication
+* Refresh token rotation
+* `@PreAuthorize` endpoint protection
+* Full audit logging for CREATE / UPDATE / DELETE actions
+* Ownership validation for all mutations
+
+## 🎨 UI/UX
+
+* Fully responsive dashboard
+* Light & dark theme support
+* Theme persistence without flash reload
+* Custom UI primitives
+* Real-time budget notifications
+
+---
+
+# 🛠 Tech Stack
+
+## Backend
+
+* Spring Boot 3.2.5 (Java 21)
+* Spring Security
+* Spring Data JPA
+* Hibernate 6
+* PostgreSQL
+* Flyway
+* JWT (jjwt 0.12)
+* MapStruct
+* OpenAPI / Swagger UI
+* iText PDF
+* Lombok
+
+## Frontend
+
+* React 18
+* TypeScript 5
+* Vite 5
+* Tailwind CSS 3
+* TanStack Query
+* React Hook Form + Zod
+* React Router 6
+* Recharts
+* date-fns
+* axios
+* sonner
+* lucide-react
+
+---
+
+# 🏗 Architecture Highlights
+
+## Authentication
+
+* JWT access & refresh token flow
+* HttpOnly + Secure cookie storage
+* Refresh token rotation
+* Revoke-all sessions on password change
+
+## Authorization
+
+* Role-based access control using `@PreAuthorize`
+* ADMIN write protection
+* Authenticated read access
+
+## Multi-Tenancy
+
+* TenantContext using ThreadLocal storage
+* Tenant-aware request filtering
+* Company-scoped queries
+* Ownership verification on every mutation
+
+## Audit Logging
+
+* AOP-based entity change tracking
+* Stores actor, action, entity ID, old/new JSON snapshots
+
+## Financial Precision
+
+* `BigDecimal` monetary handling
+* Precision-safe serialization
+* Float drift prevention
+
+## Database
+
+* PostgreSQL with Flyway-managed migrations
+* `ddl-auto: validate` for production-safe schema validation
+
+## Theming
+
+* CSS variable-driven Tailwind theme system
+* Persistent dark/light mode
+* No flash on theme switch
+
+---
+
+# 📌 Project Goals
+
+This project was built to explore:
+
+* Enterprise SaaS architecture
+* Secure multi-tenant backend systems
+* Scalable frontend dashboard design
+* AI-assisted development workflows
+* Production-style authentication & authorization patterns
+
+---
+
+# ⚡ Future Improvements
+
+* Docker support
+* CI/CD pipeline
+* Redis caching
+* Real-time notifications
+* Cloud deployment
+* Advanced analytics
+* Microservices migration
+
+---
+
+# 📚 AI-Assisted Development
+
+This project was developed with AI-assisted workflows using Claude AI while maintaining full developer-driven architecture, security, and business logic decisions.
